@@ -1,0 +1,1267 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>樂法 客戶管理系統</title>
+<style>
+:root {
+  --bg: #f5f4f0;
+  --surface: #ffffff;
+  --surface2: #f9f8f5;
+  --border: rgba(0,0,0,0.08);
+  --border2: rgba(0,0,0,0.14);
+  --text: #1a1a18;
+  --text2: #5a5a56;
+  --text3: #9a9a94;
+  --accent: #1a1a18;
+  --blue: #2563eb; --blue-bg: #eff6ff; --blue-text: #1d4ed8;
+  --green: #16a34a; --green-bg: #f0fdf4; --green-text: #15803d;
+  --amber: #d97706; --amber-bg: #fffbeb; --amber-text: #b45309;
+  --red: #dc2626; --red-bg: #fef2f2; --red-text: #b91c1c;
+  --purple: #7c3aed; --purple-bg: #f5f3ff; --purple-text: #6d28d9;
+  --teal: #0d9488; --teal-bg: #f0fdfa; --teal-text: #0f766e;
+  --r: 8px; --r2: 12px;
+  --shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Noto Sans TC',system-ui,sans-serif;background:var(--bg);color:var(--text);font-size:14px;line-height:1.5;display:flex;height:100vh;overflow:hidden}
+
+/* Sidebar */
+.sidebar{width:220px;min-width:220px;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;height:100vh;overflow:hidden}
+.logo-area{padding:20px 18px 16px;border-bottom:1px solid var(--border)}
+.logo-name{font-size:16px;font-weight:700;letter-spacing:.02em}
+.logo-sub{font-size:11px;color:var(--text3);margin-top:2px}
+.nav{flex:1;padding:10px 10px;overflow-y:auto}
+.nav-section{margin-bottom:20px}
+.nav-label{font-size:10px;color:var(--text3);font-weight:600;text-transform:uppercase;letter-spacing:.08em;padding:0 8px 6px}
+.nav-item{display:flex;align-items:center;gap:9px;padding:8px 10px;border-radius:var(--r);cursor:pointer;color:var(--text2);transition:.12s;font-size:13px;border:none;background:none;width:100%;text-align:left}
+.nav-item:hover{background:var(--bg);color:var(--text)}
+.nav-item.active{background:var(--text);color:#fff;font-weight:500}
+.nav-item svg{width:16px;height:16px;flex-shrink:0;opacity:.75}
+.nav-item.active svg{opacity:1}
+.nav-badge{margin-left:auto;font-size:10px;background:var(--red-bg);color:var(--red-text);padding:1px 6px;border-radius:10px;font-weight:600}
+.sidebar-footer{padding:14px 18px;border-top:1px solid var(--border);font-size:12px;color:var(--text3)}
+
+/* Main */
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden;height:100vh}
+.topbar{background:var(--surface);border-bottom:1px solid var(--border);padding:14px 24px;display:flex;align-items:center;gap:12px;flex-shrink:0}
+.topbar-title{font-size:16px;font-weight:600;flex:1}
+.topbar-sub{font-size:12px;color:var(--text3);margin-top:1px}
+.content{flex:1;overflow-y:auto;padding:20px 24px}
+
+/* Filter bar */
+.filter-bar{display:flex;align-items:center;gap:8px;margin-bottom:16px;flex-wrap:wrap}
+.filter-select{padding:6px 10px;border:1px solid var(--border2);border-radius:var(--r);background:var(--surface);color:var(--text);font-size:13px;font-family:inherit;cursor:pointer;outline:none}
+.filter-select:focus{border-color:var(--blue)}
+.search-input{padding:6px 12px;border:1px solid var(--border2);border-radius:var(--r);background:var(--surface);color:var(--text);font-size:13px;font-family:inherit;outline:none;min-width:200px}
+.search-input:focus{border-color:var(--blue)}
+.filter-sep{height:24px;width:1px;background:var(--border2);margin:0 2px}
+
+/* Buttons */
+.btn{display:inline-flex;align-items:center;gap:6px;padding:7px 13px;border-radius:var(--r);font-size:13px;cursor:pointer;border:1px solid var(--border2);background:var(--surface);color:var(--text);font-family:inherit;transition:.12s;font-weight:400;white-space:nowrap}
+.btn:hover{background:var(--bg)}
+.btn-primary{background:var(--text);color:#fff;border-color:var(--text)}
+.btn-primary:hover{opacity:.87}
+.btn-sm{padding:4px 10px;font-size:12px}
+.btn svg{width:14px;height:14px}
+
+/* Stats */
+.stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px}
+.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r2);padding:16px 18px}
+.stat-label{font-size:11px;color:var(--text3);margin-bottom:6px;font-weight:500;text-transform:uppercase;letter-spacing:.04em}
+.stat-value{font-size:24px;font-weight:700;letter-spacing:-.02em}
+.stat-sub{font-size:11px;color:var(--text3);margin-top:4px}
+.stat-up{color:var(--green)}
+.stat-down{color:var(--red)}
+
+/* Tags / Pills */
+.tag{display:inline-block;font-size:11px;padding:2px 8px;border-radius:10px;font-weight:500;white-space:nowrap}
+.tag-blue{background:var(--blue-bg);color:var(--blue-text)}
+.tag-green{background:var(--green-bg);color:var(--green-text)}
+.tag-amber{background:var(--amber-bg);color:var(--amber-text)}
+.tag-red{background:var(--red-bg);color:var(--red-text)}
+.tag-purple{background:var(--purple-bg);color:var(--purple-text)}
+.tag-teal{background:var(--teal-bg);color:var(--teal-text)}
+.tag-gray{background:var(--bg);color:var(--text2);border:1px solid var(--border2)}
+
+/* Table */
+.table-wrap{background:var(--surface);border:1px solid var(--border);border-radius:var(--r2);overflow:hidden;margin-bottom:16px}
+.table-header{padding:12px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.table-title{font-size:13px;font-weight:600}
+table{width:100%;border-collapse:collapse;font-size:13px}
+thead th{padding:10px 14px;text-align:left;font-size:11px;font-weight:600;color:var(--text3);border-bottom:1px solid var(--border);background:var(--surface2);white-space:nowrap;text-transform:uppercase;letter-spacing:.04em}
+tbody tr{border-bottom:1px solid var(--border);transition:.1s;cursor:pointer}
+tbody tr:last-child{border-bottom:none}
+tbody tr:hover{background:var(--surface2)}
+tbody td{padding:10px 14px;vertical-align:middle}
+
+/* Progress bar */
+.progress-wrap{background:var(--bg);border-radius:4px;height:6px;overflow:hidden;min-width:80px}
+.progress-fill{height:100%;border-radius:4px;background:var(--blue);transition:width .3s}
+.progress-fill.green{background:var(--green)}
+.progress-fill.amber{background:var(--amber)}
+
+/* Cards grid */
+.cards-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px;margin-bottom:16px}
+.client-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r2);padding:16px;cursor:pointer;transition:.15s;position:relative}
+.client-card:hover{border-color:var(--border2);box-shadow:var(--shadow);transform:translateY(-1px)}
+.client-card-top{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:12px}
+.client-avatar{width:36px;height:36px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;flex-shrink:0}
+.client-name{font-size:14px;font-weight:600;margin-bottom:2px}
+.client-meta{font-size:11px;color:var(--text3)}
+.client-card-stats{display:grid;grid-template-columns:1fr 1fr;gap:8px;border-top:1px solid var(--border);padding-top:12px;margin-top:4px}
+.cs-item{font-size:11px}
+.cs-label{color:var(--text3);margin-bottom:2px}
+.cs-val{font-weight:600;font-size:13px}
+
+/* Panel */
+.panel{background:var(--surface);border:1px solid var(--border);border-radius:var(--r2);padding:16px;margin-bottom:12px}
+.panel-title{font-size:13px;font-weight:600;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between}
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px}
+.three-col{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:12px}
+
+/* Form */
+.form-group{margin-bottom:12px}
+.form-label{font-size:12px;font-weight:500;color:var(--text2);margin-bottom:4px;display:block}
+.form-input{width:100%;padding:7px 10px;border:1px solid var(--border2);border-radius:var(--r);font-size:13px;background:var(--surface);color:var(--text);font-family:inherit;outline:none;transition:.12s}
+.form-input:focus{border-color:var(--blue);box-shadow:0 0 0 3px rgba(37,99,235,.08)}
+select.form-input{cursor:pointer}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.form-row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+
+/* Modal */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:1000;display:flex;align-items:center;justify-content:center}
+.modal{background:var(--surface);border-radius:var(--r2);width:520px;max-width:95vw;max-height:90vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.18)}
+.modal-head{padding:20px 22px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:var(--surface);z-index:1}
+.modal-title{font-size:15px;font-weight:600}
+.modal-body{padding:20px 22px}
+.modal-foot{padding:14px 22px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:8px;position:sticky;bottom:0;background:var(--surface)}
+.modal-close{background:none;border:none;cursor:pointer;color:var(--text3);font-size:20px;padding:2px 6px;line-height:1}
+
+/* Client detail drawer */
+.drawer{position:fixed;right:0;top:0;height:100vh;width:660px;background:var(--surface);border-left:1px solid var(--border);z-index:900;display:flex;flex-direction:column;transform:translateX(100%);transition:transform .25s cubic-bezier(.4,0,.2,1);box-shadow:-8px 0 30px rgba(0,0,0,.08)}
+.drawer.open{transform:translateX(0)}
+.drawer-head{padding:18px 22px;border-bottom:1px solid var(--border);display:flex;align-items:flex-start;justify-content:space-between;flex-shrink:0}
+.drawer-body{flex:1;overflow-y:auto;padding:20px 22px}
+.drawer-tabs{display:flex;gap:2px;border-bottom:1px solid var(--border);margin-bottom:16px;margin-top:-4px}
+.dtab{padding:8px 14px;font-size:13px;cursor:pointer;border-bottom:2px solid transparent;color:var(--text2);margin-bottom:-1px;transition:.1s}
+.dtab.active{color:var(--blue);border-bottom-color:var(--blue);font-weight:500}
+.tab-pane{display:none}
+.tab-pane.active{display:block}
+
+/* Mini chart */
+.bar-chart{display:flex;align-items:flex-end;gap:4px;height:60px;padding-top:4px}
+.bar-col{display:flex;flex-direction:column;align-items:center;gap:3px;flex:1}
+.bar{width:100%;border-radius:3px 3px 0 0;min-height:3px;transition:.3s}
+.bar-label{font-size:9px;color:var(--text3);white-space:nowrap}
+
+/* Type color map */
+.type-口碑{color:var(--purple-text);background:var(--purple-bg)}
+.type-社群{color:var(--blue-text);background:var(--blue-bg)}
+.type-廣告{color:var(--amber-text);background:var(--amber-bg)}
+.type-其他{color:var(--text2);background:var(--bg)}
+
+/* Page visibility */
+.page{display:none}
+.page.active{display:block}
+
+/* Scrollbar */
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:10px}
+
+/* Editable hint */
+.edit-hint{font-size:10px;color:var(--text3);padding:2px 6px;border-radius:4px;border:1px dashed var(--border2);cursor:pointer}
+.edit-hint:hover{border-color:var(--blue);color:var(--blue)}
+</style>
+</head>
+<body>
+
+<!-- Sidebar -->
+<div class="sidebar">
+  <div class="logo-area">
+    <div class="logo-name">樂法行銷</div>
+    <div class="logo-sub">客戶管理系統 v1.0</div>
+  </div>
+  <nav class="nav">
+    <div class="nav-section">
+      <div class="nav-label">主選單</div>
+      <button class="nav-item active" onclick="showPage('dashboard',this)">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="1" width="6" height="6" rx="1"/><rect x="9" y="1" width="6" height="6" rx="1"/><rect x="1" y="9" width="6" height="6" rx="1"/><rect x="9" y="9" width="6" height="6" rx="1"/></svg>
+        儀表板
+      </button>
+      <button class="nav-item" onclick="showPage('clients',this)">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="5" r="3"/><path d="M2 14c0-3.3 2.7-6 6-6s6 2.7 6 6"/></svg>
+        客戶管理
+      </button>
+    </div>
+    <div class="nav-section">
+      <div class="nav-label">報表</div>
+      <button class="nav-item" onclick="showPage('report-total',this)">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="1" width="14" height="14" rx="2"/><path d="M5 8h6M5 11h4M5 5h6"/></svg>
+        總表
+      </button>
+      <button class="nav-item" onclick="showPage('report-vendor',this)">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 4h12v9a1 1 0 01-1 1H3a1 1 0 01-1-1V4z"/><path d="M5 4V2h6v2"/></svg>
+        廠商執行表
+      </button>
+      <button class="nav-item" onclick="showPage('report-spec',this)">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 12V4l4-2 4 2 4-2v8l-4 2-4-2-4 2z"/></svg>
+        規格統計表
+      </button>
+      <button class="nav-item" onclick="showPage('report-freelancer',this)">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="6" cy="5" r="2.5"/><path d="M1 13c0-2.8 2.2-5 5-5"/><path d="M10 9l1.5 1.5L14 8"/></svg>
+        外包人員統計
+      </button>
+    </div>
+    <div class="nav-section">
+      <div class="nav-label">設定</div>
+      <button class="nav-item" onclick="showPage('settings',this)">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="2"/><path d="M8 1v2M8 13v2M1 8h2M13 8h2M3.1 3.1l1.4 1.4M11.5 11.5l1.4 1.4M3.1 12.9l1.4-1.4M11.5 4.5l1.4-1.4"/></svg>
+        廠商 / 外包人員
+      </button>
+    </div>
+  </nav>
+  <div class="sidebar-footer">© 2026 樂法網路行銷</div>
+</div>
+
+<!-- Main Content -->
+<div class="main">
+
+  <!-- ===== DASHBOARD ===== -->
+  <div id="page-dashboard" class="page active">
+    <div class="topbar">
+      <div>
+        <div class="topbar-title">儀表板</div>
+        <div class="topbar-sub">總覽所有客戶專案執行狀況</div>
+      </div>
+      <select class="filter-select" id="dash-filter-type" onchange="renderDashboard()">
+        <option value="">全部規格</option>
+        <option value="口碑">口碑</option>
+        <option value="社群">社群</option>
+        <option value="廣告">廣告</option>
+        <option value="其他">其他</option>
+      </select>
+      <select class="filter-select" id="dash-filter-client" onchange="renderDashboard()">
+        <option value="">全部客戶</option>
+      </select>
+      <select class="filter-select" id="dash-filter-contract" onchange="renderDashboard()">
+        <option value="">全部走期</option>
+        <option value="半年以下">半年以下</option>
+        <option value="半年以上">半年以上</option>
+      </select>
+    </div>
+    <div class="content" id="dashboard-content"></div>
+  </div>
+
+  <!-- ===== CLIENTS ===== -->
+  <div id="page-clients" class="page">
+    <div class="topbar">
+      <div>
+        <div class="topbar-title">客戶管理</div>
+        <div class="topbar-sub">客戶基本資料與規格成本表</div>
+      </div>
+      <input class="search-input" placeholder="搜尋客戶名稱..." id="client-search" oninput="renderClients()">
+      <select class="filter-select" id="client-filter-contract" onchange="renderClients()">
+        <option value="">全部走期</option>
+        <option value="半年以下">半年以下</option>
+        <option value="半年以上">半年以上</option>
+      </select>
+      <button class="btn btn-primary" onclick="openAddClient()">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 2v12M2 8h12"/></svg>
+        新增客戶
+      </button>
+    </div>
+    <div class="content" id="clients-content"></div>
+  </div>
+
+  <!-- ===== REPORT TOTAL ===== -->
+  <div id="page-report-total" class="page">
+    <div class="topbar">
+      <div>
+        <div class="topbar-title">總表</div>
+        <div class="topbar-sub">全專案執行規格、費用彙總</div>
+      </div>
+      <select class="filter-select" id="rt-client" onchange="renderReportTotal()"><option value="">全部客戶</option></select>
+      <select class="filter-select" id="rt-type" onchange="renderReportTotal()"><option value="">全部規格</option><option value="口碑">口碑</option><option value="社群">社群</option><option value="廣告">廣告</option><option value="其他">其他</option></select>
+      <select class="filter-select" id="rt-vendor" onchange="renderReportTotal()"><option value="">全部廠商</option></select>
+      <select class="filter-select" id="rt-freelancer" onchange="renderReportTotal()"><option value="">全部外包人員</option></select>
+    </div>
+    <div class="content" id="report-total-content"></div>
+  </div>
+
+  <!-- ===== REPORT VENDOR ===== -->
+  <div id="page-report-vendor" class="page">
+    <div class="topbar">
+      <div>
+        <div class="topbar-title">廠商執行表</div>
+        <div class="topbar-sub">口碑發給帳號商的發案對帳表</div>
+      </div>
+      <select class="filter-select" id="rv-client" onchange="renderReportVendor()"><option value="">全部客戶</option></select>
+      <select class="filter-select" id="rv-vendor" onchange="renderReportVendor()"><option value="">全部廠商</option></select>
+      <select class="filter-select" id="rv-month" onchange="renderReportVendor()"><option value="">全部月份</option></select>
+      <button class="btn btn-primary" onclick="openAddVendorRecord()">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 2v12M2 8h12"/></svg>
+        新增記錄
+      </button>
+    </div>
+    <div class="content" id="report-vendor-content"></div>
+  </div>
+
+  <!-- ===== REPORT SPEC ===== -->
+  <div id="page-report-spec" class="page">
+    <div class="topbar">
+      <div>
+        <div class="topbar-title">規格統計表</div>
+        <div class="topbar-sub">所有專案各規格類型執行量與費用統計</div>
+      </div>
+      <select class="filter-select" id="rs-client" onchange="renderReportSpec()"><option value="">全部客戶</option></select>
+      <select class="filter-select" id="rs-month" onchange="renderReportSpec()"><option value="">全部月份</option></select>
+      <select class="filter-select" id="rs-freelancer" onchange="renderReportSpec()"><option value="">全部外包人員</option></select>
+    </div>
+    <div class="content" id="report-spec-content"></div>
+  </div>
+
+  <!-- ===== REPORT FREELANCER ===== -->
+  <div id="page-report-freelancer" class="page">
+    <div class="topbar">
+      <div>
+        <div class="topbar-title">外包人員統計</div>
+        <div class="topbar-sub">每位外包人員每月執行支出（橫向串接）</div>
+      </div>
+      <select class="filter-select" id="rf-person" onchange="renderReportFreelancer()"><option value="">全部人員</option></select>
+      <select class="filter-select" id="rf-month" onchange="renderReportFreelancer()"><option value="">全部月份</option></select>
+      <select class="filter-select" id="rf-client" onchange="renderReportFreelancer()"><option value="">全部客戶</option></select>
+      <button class="btn btn-primary" onclick="openAddFreelancerRecord()">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 2v12M2 8h12"/></svg>
+        新增記錄
+      </button>
+    </div>
+    <div class="content" id="report-freelancer-content"></div>
+  </div>
+
+  <!-- ===== SETTINGS ===== -->
+  <div id="page-settings" class="page">
+    <div class="topbar">
+      <div><div class="topbar-title">廠商 / 外包人員管理</div></div>
+      <button class="btn btn-primary" onclick="openAddVendor()">新增廠商</button>
+      <button class="btn" onclick="openAddFreelancer()">新增外包人員</button>
+    </div>
+    <div class="content" id="settings-content"></div>
+  </div>
+
+</div>
+
+<!-- Client Detail Drawer -->
+<div class="drawer" id="client-drawer">
+  <div class="drawer-head">
+    <div>
+      <div style="font-size:16px;font-weight:700" id="drawer-client-name">—</div>
+      <div style="font-size:12px;color:var(--text3);margin-top:2px" id="drawer-client-meta">—</div>
+    </div>
+    <div style="display:flex;gap:8px;align-items:center">
+      <button class="btn btn-sm" id="drawer-edit-btn" onclick="">編輯</button>
+      <button class="modal-close" onclick="closeDrawer()">×</button>
+    </div>
+  </div>
+  <div class="drawer-body" id="drawer-body"></div>
+</div>
+<div id="drawer-overlay" style="position:fixed;inset:0;z-index:899;display:none" onclick="closeDrawer()"></div>
+
+<!-- Modal -->
+<div class="modal-overlay" id="modal-overlay" style="display:none" onclick="if(event.target===this)closeModal()">
+  <div class="modal" id="modal">
+    <div class="modal-head">
+      <div class="modal-title" id="modal-title">—</div>
+      <button class="modal-close" onclick="closeModal()">×</button>
+    </div>
+    <div class="modal-body" id="modal-body"></div>
+    <div class="modal-foot" id="modal-foot">
+      <button class="btn" onclick="closeModal()">取消</button>
+      <button class="btn btn-primary" id="modal-confirm">確認儲存</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ─── DATA ───────────────────────────────────────────────────────
+const DB = {
+  clients: [
+    {id:'C001',name:'永達保經',ubn:'',contact:'',pm:'',contractStart:'2026-04-01',contractEnd:'2026-12-31',payMethod:'月付',totalContract:1200000,note:''},
+    {id:'C002',name:'虹牌油漆',ubn:'',contact:'',pm:'',contractStart:'2026-01-01',contractEnd:'2026-12-31',payMethod:'季付',totalContract:5913400,note:''},
+    {id:'C003',name:'OZIO',ubn:'',contact:'',pm:'',contractStart:'2026-01-01',contractEnd:'2026-03-31',payMethod:'月付',totalContract:0,note:''},
+    {id:'C004',name:"Mia C'bon",ubn:'',contact:'',pm:'',contractStart:'2026-01-01',contractEnd:'2026-06-30',payMethod:'月付',totalContract:0,note:''},
+    {id:'C005',name:'米洛斯',ubn:'',contact:'',pm:'',contractStart:'2026-01-01',contractEnd:'2026-12-31',payMethod:'月付',totalContract:0,note:''},
+    {id:'C006',name:'亞星通',ubn:'',contact:'',pm:'',contractStart:'2026-01-01',contractEnd:'2026-12-31',payMethod:'月付',totalContract:0,note:''},
+    {id:'C007',name:'風華整外',ubn:'',contact:'',pm:'',contractStart:'2026-01-01',contractEnd:'2026-12-31',payMethod:'月付',totalContract:0,note:''},
+    {id:'C008',name:'風華御髮',ubn:'',contact:'',pm:'',contractStart:'2026-01-01',contractEnd:'2026-12-31',payMethod:'月付',totalContract:0,note:''},
+    {id:'C009',name:'慢慢家居',ubn:'',contact:'',pm:'',contractStart:'2026-03-01',contractEnd:'2026-08-31',payMethod:'月付',totalContract:0,note:''},
+    {id:'C010',name:'點睛品',ubn:'',contact:'',pm:'',contractStart:'2026-02-01',contractEnd:'2026-07-31',payMethod:'月付',totalContract:0,note:''},
+    {id:'C011',name:'JCB',ubn:'',contact:'',pm:'',contractStart:'2026-01-01',contractEnd:'2026-06-30',payMethod:'月付',totalContract:0,note:''},
+    {id:'C012',name:'台灣菸酒',ubn:'',contact:'',pm:'',contractStart:'2026-01-01',contractEnd:'2026-06-30',payMethod:'月付',totalContract:0,note:''},
+    {id:'C013',name:'涵碧樓',ubn:'',contact:'',pm:'',contractStart:'2026-01-01',contractEnd:'2026-03-31',payMethod:'月付',totalContract:0,note:''},
+  ],
+  specItems: [
+    {id:'S001',clientId:'C001',type:'廣告',name:'Google P-max',spec:'P-max廣告投放',qty:9,unit:'月',price:17800,cost:17800,totalPrice:160200,totalCost:160200},
+    {id:'S002',clientId:'C001',type:'廣告',name:'Google 服務費',spec:'廣告服務費(50%)',qty:9,unit:'月',price:3560,cost:1780,totalPrice:32040,totalCost:16020},
+    {id:'S003',clientId:'C001',type:'廣告',name:'YT觀看廣告',spec:'YouTube觀看廣告',qty:9,unit:'月',price:12200,cost:12200,totalPrice:109800,totalCost:109800},
+    {id:'S004',clientId:'C001',type:'廣告',name:'YT服務費',spec:'YouTube廣告服務費(50%)',qty:9,unit:'月',price:2440,cost:1220,totalPrice:21960,totalCost:10980},
+    {id:'S005',clientId:'C001',type:'社群',name:'社群貼文',spec:'每月貼文規劃',qty:30,unit:'篇',price:5000,cost:2250,totalPrice:150000,totalCost:67500},
+    {id:'S006',clientId:'C001',type:'廣告',name:'貼文廣告',spec:'貼文投放廣告',qty:30,unit:'篇',price:5000,cost:5000,totalPrice:150000,totalCost:150000},
+    {id:'S007',clientId:'C001',type:'口碑',name:'口碑監控',spec:'每月監控報表',qty:9,unit:'月',price:20000,cost:2800,totalPrice:180000,totalCost:25200},
+    {id:'S008',clientId:'C001',type:'口碑',name:'即時回文',spec:'即時回文-常規',qty:45,unit:'則',price:800,cost:400,totalPrice:36000,totalCost:18000},
+    {id:'S009',clientId:'C001',type:'口碑',name:'短議題文',spec:'300字+5回文',qty:23,unit:'篇',price:2000,cost:550,totalPrice:46000,totalCost:12650},
+    {id:'S010',clientId:'C001',type:'口碑',name:'綁定回文',spec:'口碑文內回文',qty:95,unit:'則',price:800,cost:250,totalPrice:76000,totalCost:23750},
+    {id:'S011',clientId:'C002',type:'社群',name:'FB貼文規劃',spec:'每年52篇',qty:52,unit:'篇',price:3600,cost:0,totalPrice:187200,totalCost:0},
+    {id:'S012',clientId:'C002',type:'廣告',name:'FB貼文廣告',spec:'每篇廣告投放',qty:52,unit:'篇',price:2500,cost:2500,totalPrice:130000,totalCost:130000},
+    {id:'S013',clientId:'C002',type:'廣告',name:'FB粉絲廣告',spec:'6000人觸及',qty:6000,unit:'人',price:32,cost:32,totalPrice:192000,totalCost:192000},
+    {id:'S014',clientId:'C002',type:'社群',name:'IG貼文規劃',spec:'每年96篇',qty:96,unit:'篇',price:2500,cost:0,totalPrice:240000,totalCost:0},
+    {id:'S015',clientId:'C002',type:'廣告',name:'IG貼文廣告',spec:'每月廣告投放',qty:12,unit:'月',price:10000,cost:10000,totalPrice:120000,totalCost:120000},
+    {id:'S016',clientId:'C002',type:'其他',name:'長影音攝影',spec:'年度10支',qty:10,unit:'年',price:50000,cost:0,totalPrice:500000,totalCost:0},
+    {id:'S017',clientId:'C002',type:'其他',name:'短影音攝影',spec:'年度10支',qty:10,unit:'年',price:36300,cost:0,totalPrice:363000,totalCost:0},
+    {id:'S018',clientId:'C002',type:'口碑',name:'口碑監控',spec:'每月監控',qty:12,unit:'月',price:8000,cost:0,totalPrice:96000,totalCost:0},
+    {id:'S019',clientId:'C003',type:'口碑',name:'彈性回文',spec:'100則',qty:100,unit:'則',price:0,cost:0,totalPrice:0,totalCost:0},
+    {id:'S020',clientId:'C003',type:'口碑',name:'短議題文',spec:'300字+5回文 4篇',qty:4,unit:'篇',price:0,cost:0,totalPrice:0,totalCost:0},
+    {id:'S021',clientId:'C003',type:'口碑',name:'短圖文',spec:'300-500字+圖3張 10篇',qty:10,unit:'篇',price:0,cost:0,totalPrice:0,totalCost:0},
+    {id:'S022',clientId:'C003',type:'口碑',name:'長圖文',spec:'500-1000字+圖5張 4篇',qty:4,unit:'篇',price:0,cost:0,totalPrice:0,totalCost:0},
+  ],
+  vendors: [
+    {id:'V001',name:'元緣',type:'口碑帳號商',contact:'',note:''},
+    {id:'V002',name:'亞星通(廠)',type:'口碑帳號商',contact:'',note:''},
+    {id:'V003',name:'Jodo',type:'口碑帳號商',contact:'',note:''},
+    {id:'V004',name:'歐文',type:'口碑帳號商',contact:'',note:''},
+  ],
+  freelancers: [
+    {id:'F001',name:'Sherry',type:'文案/回文',rates:{'長圖文':1100,'短圖文':850,'短議題文':550,'綁定回文':50,'即時回文-常規':150,'即時回文-簡易':50,'單圖文(企劃)':1500,'多圖文(企劃)':2500}},
+    {id:'F002',name:'Nina',type:'口碑執行',rates:{}},
+    {id:'F003',name:'Jackie',type:'口碑執行',rates:{}},
+    {id:'F004',name:'羿琦',type:'口碑執行',rates:{}},
+    {id:'F005',name:'妙妙',type:'口碑執行',rates:{}},
+    {id:'F006',name:'跳跳',type:'口碑執行',rates:{}},
+    {id:'F007',name:'露易莎',type:'口碑執行',rates:{}},
+    {id:'F008',name:'Mia',type:'社群設計企劃',rates:{'平面設計':1000,'單圖設計':1300,'多圖設計':2300,'短影音':8000,'單圖企劃':1500,'多圖企劃':2500,'月報':2000}},
+  ],
+  vendorRecords: [
+    {id:'VR001',specItemId:'S008',clientId:'C001',vendorId:'V001',date:'2026-04-15',platform:'Dcard',board:'保險',itemType:'回文',title:'即時回文#1',account:'帳號-A',link:'',done:true,amount:150,month:'2026-04'},
+    {id:'VR002',specItemId:'S008',clientId:'C001',vendorId:'V001',date:'2026-04-20',platform:'Threads',board:'',itemType:'回文',title:'即時回文#2',account:'帳號-B',link:'',done:true,amount:150,month:'2026-04'},
+    {id:'VR003',specItemId:'S009',clientId:'C001',vendorId:'V001',date:'2026-05-05',platform:'Dcard',board:'保險',itemType:'發文',title:'短議題文#1',account:'帳號-C',link:'',done:true,amount:550,month:'2026-05'},
+    {id:'VR004',specItemId:'S021',clientId:'C003',vendorId:'V002',date:'2026-01-10',platform:'FB',board:'美妝',itemType:'發文',title:'短圖文#1',account:'帳號-D',link:'',done:true,amount:0,month:'2026-01'},
+  ],
+  freelancerRecords: [
+    {id:'FR001',specItemId:'S005',clientId:'C001',freelancerId:'F001',month:'2026-04',itemType:'單圖文(企劃)',qty:2,unitCost:1500,total:3000,status:'完成'},
+    {id:'FR002',specItemId:'S005',clientId:'C001',freelancerId:'F001',month:'2026-05',itemType:'單圖文(企劃)',qty:1,unitCost:1500,total:1500,status:'完成'},
+    {id:'FR003',specItemId:'S008',clientId:'C001',freelancerId:'F002',month:'2026-04',itemType:'即時回文-常規',qty:5,unitCost:150,total:750,status:'完成'},
+    {id:'FR004',specItemId:'S009',clientId:'C001',freelancerId:'F001',month:'2026-05',itemType:'短議題文',qty:3,unitCost:550,total:1650,status:'完成'},
+  ],
+};
+
+// ─── HELPERS ────────────────────────────────────────────────────
+function fmt(n){return n==null?'—':'$'+Math.round(n).toLocaleString()}
+function pct(n){return n==null?'—':Math.round(n*100)+'%'}
+function contractType(s,e){
+  const d=(new Date(e)-new Date(s))/(1000*60*60*24);
+  return d<=180?'半年以下':'半年以上';
+}
+function contractDays(s,e){return Math.round((new Date(e)-new Date(s))/(1000*60*60*24))}
+function clientSpecs(cid){return DB.specItems.filter(s=>s.clientId===cid)}
+function clientVendorCost(cid){return DB.vendorRecords.filter(r=>r.clientId===cid&&r.done).reduce((a,r)=>a+r.amount,0)}
+function clientFreelancerCost(cid){return DB.freelancerRecords.filter(r=>r.clientId===cid).reduce((a,r)=>a+r.total,0)}
+function specVendorCost(sid){return DB.vendorRecords.filter(r=>r.specItemId===sid&&r.done).reduce((a,r)=>a+r.amount,0)}
+function specFreelancerCost(sid){return DB.freelancerRecords.filter(r=>r.specItemId===sid).reduce((a,r)=>a+r.total,0)}
+function specDoneCount(sid){return DB.vendorRecords.filter(r=>r.specItemId===sid&&r.done).length + DB.freelancerRecords.filter(r=>r.specItemId===sid&&r.status==='完成').length}
+function typeTag(t){const m={口碑:'purple',社群:'blue',廣告:'amber',其他:'gray'};return`<span class="tag type-${t}">${t}</span>`}
+function contractTag(t){return t==='半年以下'?`<span class="tag tag-amber">${t}</span>`:`<span class="tag tag-blue">${t}</span>`}
+function nextId(arr,prefix){const nums=arr.map(x=>parseInt(x.id.replace(prefix,''))).filter(Boolean);return prefix+(nums.length?String(Math.max(...nums)+1).padStart(3,'0'):'001')}
+
+// ─── NAV ────────────────────────────────────────────────────────
+function showPage(id,btn){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.getElementById('page-'+id).classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(b=>b.classList.remove('active'));
+  if(btn)btn.classList.add('active');
+  closeDrawer();
+  const renders={dashboard:renderDashboard,clients:renderClients,'report-total':renderReportTotal,'report-vendor':renderReportVendor,'report-spec':renderReportSpec,'report-freelancer':renderReportFreelancer,settings:renderSettings};
+  if(renders[id])renders[id]();
+}
+
+// ─── MODAL ──────────────────────────────────────────────────────
+function openModal(title,bodyHtml,onConfirm){
+  document.getElementById('modal-title').textContent=title;
+  document.getElementById('modal-body').innerHTML=bodyHtml;
+  document.getElementById('modal-confirm').onclick=onConfirm||closeModal;
+  document.getElementById('modal-overlay').style.display='flex';
+}
+function closeModal(){document.getElementById('modal-overlay').style.display='none'}
+
+// ─── DRAWER ─────────────────────────────────────────────────────
+function openDrawer(clientId){
+  const c=DB.clients.find(x=>x.id===clientId);
+  if(!c)return;
+  document.getElementById('drawer-client-name').textContent=c.name;
+  document.getElementById('drawer-client-meta').textContent=`合約 ${c.contractStart} ～ ${c.contractEnd}　${contractType(c.contractStart,c.contractEnd)}`;
+  document.getElementById('drawer-edit-btn').onclick=()=>openEditClient(clientId);
+  renderDrawerBody(clientId);
+  document.getElementById('client-drawer').classList.add('open');
+  document.getElementById('drawer-overlay').style.display='block';
+}
+function closeDrawer(){
+  document.getElementById('client-drawer').classList.remove('open');
+  document.getElementById('drawer-overlay').style.display='none';
+}
+function renderDrawerBody(clientId){
+  const c=DB.clients.find(x=>x.id===clientId);
+  const specs=clientSpecs(clientId);
+  const vCost=clientVendorCost(clientId), fCost=clientFreelancerCost(clientId);
+  const totalSpend=vCost+fCost;
+  const ct=contractType(c.contractStart,c.contractEnd);
+  const totalPrice=specs.reduce((a,s)=>a+s.totalPrice,0);
+  const totalCost=specs.reduce((a,s)=>a+s.totalCost,0);
+
+  const typeGroups={口碑:[],社群:[],廣告:[],其他:[]};
+  specs.forEach(s=>{if(typeGroups[s.type])typeGroups[s.type].push(s)});
+
+  let specRows='';
+  specs.forEach(s=>{
+    const vc=specVendorCost(s.id),fc=specFreelancerCost(s.id);
+    const margin=s.totalPrice>0?((s.totalPrice-s.totalCost)/s.totalPrice):0;
+    specRows+=`<tr>
+      <td>${typeTag(s.type)}</td>
+      <td><div style="font-weight:500">${s.name}</div><div style="font-size:11px;color:var(--text3)">${s.spec}</div></td>
+      <td>${s.qty} ${s.unit}</td>
+      <td style="text-align:right">${fmt(s.totalPrice)}</td>
+      <td style="text-align:right;color:var(--text2)">${fmt(s.totalCost)}</td>
+      <td style="text-align:right;color:var(--amber)">${fmt(vc)}</td>
+      <td style="text-align:right;color:var(--blue)">${fmt(fc)}</td>
+      <td style="text-align:right"><span class="tag ${margin>=0.5?'tag-green':margin>=0.2?'tag-amber':'tag-red'}">${pct(margin)}</span></td>
+    </tr>`;
+  });
+
+  document.getElementById('drawer-body').innerHTML=`
+    <div class="drawer-tabs">
+      <div class="dtab active" onclick="switchDTab(this,'dtab-overview')">總覽</div>
+      <div class="dtab" onclick="switchDTab(this,'dtab-specs')">規格成本表</div>
+      <div class="dtab" onclick="switchDTab(this,'dtab-vendor')">廠商記錄</div>
+      <div class="dtab" onclick="switchDTab(this,'dtab-freelancer')">外包記錄</div>
+    </div>
+    <div class="tab-pane active" id="dtab-overview">
+      <div class="three-col">
+        <div class="panel" style="padding:14px">
+          <div style="font-size:11px;color:var(--text3);margin-bottom:4px">合約總金額</div>
+          <div style="font-size:20px;font-weight:700">${c.totalContract?fmt(c.totalContract):fmt(totalPrice)}</div>
+          <div style="font-size:11px;color:var(--text3);margin-top:4px">${ct}</div>
+        </div>
+        <div class="panel" style="padding:14px">
+          <div style="font-size:11px;color:var(--text3);margin-bottom:4px">目前花費</div>
+          <div style="font-size:20px;font-weight:700">${fmt(totalSpend)}</div>
+          <div style="font-size:11px;margin-top:4px">廠商 ${fmt(vCost)} ／ 外包 ${fmt(fCost)}</div>
+        </div>
+        <div class="panel" style="padding:14px">
+          <div style="font-size:11px;color:var(--text3);margin-bottom:4px">規格數量</div>
+          <div style="font-size:20px;font-weight:700">${specs.length}</div>
+          <div style="font-size:11px;color:var(--text3);margin-top:4px">執行PM：${c.pm||'未設定'}</div>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="panel-title">客戶基本資料 <span class="edit-hint" onclick="openEditClient('${clientId}')">編輯</span></div>
+        <div class="two-col" style="font-size:13px">
+          <div><div style="color:var(--text3);font-size:11px;margin-bottom:2px">統一編號</div><div>${c.ubn||'—'}</div></div>
+          <div><div style="color:var(--text3);font-size:11px;margin-bottom:2px">聯絡人</div><div>${c.contact||'—'}</div></div>
+          <div><div style="color:var(--text3);font-size:11px;margin-bottom:2px">付款方式</div><div>${c.payMethod||'—'}</div></div>
+          <div><div style="color:var(--text3);font-size:11px;margin-bottom:2px">走期</div><div>${c.contractStart} ～ ${c.contractEnd}（${contractDays(c.contractStart,c.contractEnd)}天）</div></div>
+        </div>
+        ${c.note?`<div style="margin-top:10px;font-size:12px;color:var(--text2);background:var(--bg);padding:8px 10px;border-radius:6px">${c.note}</div>`:''}
+      </div>
+      <div class="panel">
+        <div class="panel-title">規格類型分布</div>
+        <div style="display:flex;flex-wrap:wrap;gap:8px">
+          ${Object.entries(typeGroups).filter(([,v])=>v.length>0).map(([k,v])=>{
+            const tp=v.reduce((a,s)=>a+s.totalPrice,0);
+            return`<div style="flex:1;min-width:100px;border:1px solid var(--border);border-radius:var(--r);padding:10px">
+              <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px">${typeTag(k)}<span style="font-size:11px;color:var(--text3)">${v.length} 項</span></div>
+              <div style="font-size:14px;font-weight:600">${fmt(tp)}</div>
+            </div>`;
+          }).join('')}
+        </div>
+      </div>
+    </div>
+    <div class="tab-pane" id="dtab-specs">
+      <div style="display:flex;justify-content:flex-end;margin-bottom:10px">
+        <button class="btn btn-primary btn-sm" onclick="openAddSpec('${clientId}')">新增規格項目</button>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>類型</th><th>項目</th><th>數量</th><th style="text-align:right">售價</th><th style="text-align:right">執行成本</th><th style="text-align:right">廠商花費</th><th style="text-align:right">外包花費</th><th style="text-align:right">毛利率</th></tr></thead>
+          <tbody>${specRows}</tbody>
+          <tfoot><tr style="background:var(--surface2);font-weight:600">
+            <td colspan="3" style="padding:10px 14px;font-size:12px;color:var(--text3)">合計</td>
+            <td style="padding:10px 14px;text-align:right">${fmt(totalPrice)}</td>
+            <td style="padding:10px 14px;text-align:right;color:var(--text2)">${fmt(totalCost)}</td>
+            <td style="padding:10px 14px;text-align:right;color:var(--amber)">${fmt(vCost)}</td>
+            <td style="padding:10px 14px;text-align:right;color:var(--blue)">${fmt(fCost)}</td>
+            <td style="padding:10px 14px;text-align:right"><span class="tag tag-green">${totalPrice>0?pct((totalPrice-totalCost)/totalPrice):'—'}</span></td>
+          </tr></tfoot>
+        </table>
+      </div>
+    </div>
+    <div class="tab-pane" id="dtab-vendor">
+      <div style="display:flex;justify-content:flex-end;margin-bottom:10px">
+        <button class="btn btn-primary btn-sm" onclick="openAddVendorRecord('${clientId}')">新增廠商記錄</button>
+      </div>
+      ${renderVendorRecordsTable(clientId)}
+    </div>
+    <div class="tab-pane" id="dtab-freelancer">
+      <div style="display:flex;justify-content:flex-end;margin-bottom:10px">
+        <button class="btn btn-primary btn-sm" onclick="openAddFreelancerRecord('${clientId}')">新增外包記錄</button>
+      </div>
+      ${renderFreelancerRecordsTable(clientId)}
+    </div>
+  `;
+}
+function switchDTab(el,targetId){
+  document.querySelectorAll('.dtab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.tab-pane').forEach(p=>p.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById(targetId).classList.add('active');
+}
+
+function renderVendorRecordsTable(clientId){
+  const recs=DB.vendorRecords.filter(r=>!clientId||r.clientId===clientId);
+  if(!recs.length)return`<div style="text-align:center;padding:30px;color:var(--text3)">尚無廠商執行記錄</div>`;
+  return`<div class="table-wrap"><table>
+    <thead><tr><th>月份</th><th>客戶</th><th>項目</th><th>平台</th><th>廠商</th><th>文章標題</th><th style="text-align:right">金額</th><th>狀態</th></tr></thead>
+    <tbody>${recs.map(r=>{
+      const c=DB.clients.find(x=>x.id===r.clientId);
+      const v=DB.vendors.find(x=>x.id===r.vendorId);
+      const s=DB.specItems.find(x=>x.id===r.specItemId);
+      return`<tr>
+        <td style="color:var(--text3)">${r.month}</td>
+        <td>${c?c.name:'—'}</td>
+        <td>${s?typeTag(s.type)+' '+s.name:'—'}</td>
+        <td>${r.platform}${r.board?'／'+r.board:''}</td>
+        <td>${v?v.name:'—'}</td>
+        <td style="max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${r.title}</td>
+        <td style="text-align:right;font-weight:500">${fmt(r.amount)}</td>
+        <td><span class="tag ${r.done?'tag-green':'tag-gray'}">${r.done?'已執行':'未執行'}</span></td>
+      </tr>`;
+    }).join('')}</tbody>
+  </table></div>`;
+}
+
+function renderFreelancerRecordsTable(clientId){
+  const recs=DB.freelancerRecords.filter(r=>!clientId||r.clientId===clientId);
+  if(!recs.length)return`<div style="text-align:center;padding:30px;color:var(--text3)">尚無外包執行記錄</div>`;
+  return`<div class="table-wrap"><table>
+    <thead><tr><th>月份</th><th>客戶</th><th>規格</th><th>人員</th><th>項目類型</th><th>數量</th><th style="text-align:right">單價</th><th style="text-align:right">小計</th><th>狀態</th></tr></thead>
+    <tbody>${recs.map(r=>{
+      const c=DB.clients.find(x=>x.id===r.clientId);
+      const f=DB.freelancers.find(x=>x.id===r.freelancerId);
+      const s=DB.specItems.find(x=>x.id===r.specItemId);
+      return`<tr>
+        <td style="color:var(--text3)">${r.month}</td>
+        <td>${c?c.name:'—'}</td>
+        <td>${s?typeTag(s.type)+' '+s.name:'—'}</td>
+        <td><span class="tag tag-teal">${f?f.name:'—'}</span></td>
+        <td>${r.itemType}</td>
+        <td>${r.qty}</td>
+        <td style="text-align:right;color:var(--text2)">${fmt(r.unitCost)}</td>
+        <td style="text-align:right;font-weight:500">${fmt(r.total)}</td>
+        <td><span class="tag ${r.status==='完成'?'tag-green':'tag-amber'}">${r.status}</span></td>
+      </tr>`;
+    }).join('')}</tbody>
+  </table></div>`;
+}
+
+// ─── DASHBOARD ──────────────────────────────────────────────────
+function renderDashboard(){
+  const fType=document.getElementById('dash-filter-type').value;
+  const fClient=document.getElementById('dash-filter-client').value;
+  const fContract=document.getElementById('dash-filter-contract').value;
+
+  // populate client filter
+  const sel=document.getElementById('dash-filter-client');
+  if(sel.options.length<=1){DB.clients.forEach(c=>{const o=document.createElement('option');o.value=c.id;o.textContent=c.name;sel.appendChild(o);})}
+
+  const clients=DB.clients.filter(c=>{
+    if(fClient&&c.id!==fClient)return false;
+    if(fContract&&contractType(c.contractStart,c.contractEnd)!==fContract)return false;
+    return true;
+  });
+
+  let specs=DB.specItems.filter(s=>{
+    if(fClient&&s.clientId!==fClient)return false;
+    if(fType&&s.type!==fType)return false;
+    if(!clients.find(c=>c.id===s.clientId))return false;
+    return true;
+  });
+
+  const totalContract=clients.reduce((a,c)=>a+c.totalContract,0);
+  const totalSpecPrice=specs.reduce((a,s)=>a+s.totalPrice,0);
+  const totalVendor=DB.vendorRecords.filter(r=>r.done&&(!fClient||r.clientId===fClient)).reduce((a,r)=>a+r.amount,0);
+  const totalFreelancer=DB.freelancerRecords.filter(r=>(!fClient||r.clientId===fClient)).reduce((a,r)=>a+r.total,0);
+  const totalSpend=totalVendor+totalFreelancer;
+
+  // spec type breakdown
+  const byType={口碑:{price:0,cost:0,count:0},社群:{price:0,cost:0,count:0},廣告:{price:0,cost:0,count:0},其他:{price:0,cost:0,count:0}};
+  specs.forEach(s=>{if(byType[s.type]){byType[s.type].price+=s.totalPrice;byType[s.type].cost+=s.totalCost;byType[s.type].count++;}});
+
+  document.getElementById('dashboard-content').innerHTML=`
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-label">客戶數</div>
+        <div class="stat-value">${clients.length}</div>
+        <div class="stat-sub">半年以下 ${clients.filter(c=>contractType(c.contractStart,c.contractEnd)==='半年以下').length}　半年以上 ${clients.filter(c=>contractType(c.contractStart,c.contractEnd)==='半年以上').length}</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">規格總售價</div>
+        <div class="stat-value">${totalSpecPrice>=1000000?(totalSpecPrice/1000000).toFixed(1)+'M':fmt(totalSpecPrice)}</div>
+        <div class="stat-sub">${specs.length} 項規格</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">目前花費（廠商）</div>
+        <div class="stat-value">${fmt(totalVendor)}</div>
+        <div class="stat-sub">外包 ${fmt(totalFreelancer)}</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">總花費</div>
+        <div class="stat-value">${fmt(totalSpend)}</div>
+        <div class="stat-sub">佔成本 ${specs.reduce((a,s)=>a+s.totalCost,0)>0?pct(totalSpend/specs.reduce((a,s)=>a+s.totalCost,0)):'—'}</div>
+      </div>
+    </div>
+    <div class="two-col">
+      <div class="panel">
+        <div class="panel-title">規格類型分布</div>
+        <table style="font-size:13px;width:100%">
+          <thead><tr><th style="padding:6px 8px;text-align:left;font-size:11px;color:var(--text3)">類型</th><th style="padding:6px 8px;text-align:right;font-size:11px;color:var(--text3)">項目數</th><th style="padding:6px 8px;text-align:right;font-size:11px;color:var(--text3)">售價</th><th style="padding:6px 8px;text-align:right;font-size:11px;color:var(--text3)">成本</th></tr></thead>
+          <tbody>${Object.entries(byType).map(([k,v])=>`<tr>
+            <td style="padding:8px 8px">${typeTag(k)}</td>
+            <td style="padding:8px 8px;text-align:right;color:var(--text2)">${v.count}</td>
+            <td style="padding:8px 8px;text-align:right;font-weight:500">${fmt(v.price)}</td>
+            <td style="padding:8px 8px;text-align:right;color:var(--text2)">${fmt(v.cost)}</td>
+          </tr>`).join('')}</tbody>
+        </table>
+      </div>
+      <div class="panel">
+        <div class="panel-title">客戶花費概覽（廠商 + 外包）</div>
+        ${clients.slice(0,8).map(c=>{
+          const vc=clientVendorCost(c.id),fc=clientFreelancerCost(c.id),total=vc+fc;
+          const maxSpend=Math.max(...clients.map(x=>clientVendorCost(x.id)+clientFreelancerCost(x.id)),1);
+          return`<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
+            <div style="width:72px;font-size:12px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${c.name}</div>
+            <div style="flex:1">
+              <div class="progress-wrap"><div class="progress-fill" style="width:${Math.round(total/maxSpend*100)}%"></div></div>
+            </div>
+            <div style="font-size:12px;min-width:70px;text-align:right">${fmt(total)}</div>
+          </div>`;
+        }).join('')}
+      </div>
+    </div>
+    <div class="panel">
+      <div class="panel-title">近期執行記錄（廠商 + 外包）</div>
+      <table style="font-size:13px;width:100%">
+        <thead><tr>
+          <th style="padding:8px 12px;text-align:left;font-size:11px;color:var(--text3)">月份</th>
+          <th style="padding:8px 12px;text-align:left;font-size:11px;color:var(--text3)">客戶</th>
+          <th style="padding:8px 12px;text-align:left;font-size:11px;color:var(--text3)">規格</th>
+          <th style="padding:8px 12px;text-align:left;font-size:11px;color:var(--text3)">執行方</th>
+          <th style="padding:8px 12px;text-align:right;font-size:11px;color:var(--text3)">廠商費用</th>
+          <th style="padding:8px 12px;text-align:right;font-size:11px;color:var(--text3)">外包費用</th>
+        </tr></thead>
+        <tbody>${specs.slice(0,10).map(s=>{
+          const c=DB.clients.find(x=>x.id===s.clientId);
+          const vc=specVendorCost(s.id),fc=specFreelancerCost(s.id);
+          const vRec=DB.vendorRecords.find(r=>r.specItemId===s.id);
+          const fRec=DB.freelancerRecords.find(r=>r.specItemId===s.id);
+          const v=vRec?DB.vendors.find(x=>x.id===vRec.vendorId):null;
+          const f=fRec?DB.freelancers.find(x=>x.id===fRec.freelancerId):null;
+          return`<tr onclick="openDrawer('${s.clientId}')">
+            <td style="padding:8px 12px;color:var(--text3)">${vRec?vRec.month:fRec?fRec.month:'—'}</td>
+            <td style="padding:8px 12px;font-weight:500">${c?c.name:'—'}</td>
+            <td style="padding:8px 12px">${typeTag(s.type)} ${s.name}</td>
+            <td style="padding:8px 12px">${v?`<span class="tag tag-amber">${v.name}</span>`:'—'} ${f?`<span class="tag tag-teal">${f.name}</span>`:'—'}</td>
+            <td style="padding:8px 12px;text-align:right">${vc>0?fmt(vc):'—'}</td>
+            <td style="padding:8px 12px;text-align:right">${fc>0?fmt(fc):'—'}</td>
+          </tr>`;
+        }).join('')}</tbody>
+      </table>
+    </div>
+  `;
+}
+
+// ─── CLIENTS ────────────────────────────────────────────────────
+function renderClients(){
+  const q=(document.getElementById('client-search')||{}).value||'';
+  const fc=(document.getElementById('client-filter-contract')||{}).value||'';
+
+  // fill filters
+  const csel=document.getElementById('dash-filter-client');
+  if(csel&&csel.options.length<=1){DB.clients.forEach(c=>{const o=document.createElement('option');o.value=c.id;o.textContent=c.name;csel.appendChild(o);})}
+
+  const filtered=DB.clients.filter(c=>{
+    if(q&&!c.name.includes(q))return false;
+    if(fc&&contractType(c.contractStart,c.contractEnd)!==fc)return false;
+    return true;
+  });
+
+  document.getElementById('clients-content').innerHTML=`
+    <div class="cards-grid">${filtered.map(c=>{
+      const specs=clientSpecs(c.id);
+      const vCost=clientVendorCost(c.id), fCost=clientFreelancerCost(c.id);
+      const ct=contractType(c.contractStart,c.contractEnd);
+      const colors=['#dbeafe','#dcfce7','#fef9c3','#fce7f3','#f0fdf4','#eff6ff','#fdf4ff','#fff7ed'];
+      const ci=DB.clients.indexOf(c)%colors.length;
+      return`<div class="client-card" onclick="openDrawer('${c.id}')">
+        <div class="client-card-top">
+          <div style="display:flex;align-items:center;gap:10px">
+            <div class="client-avatar" style="background:${colors[ci]}">${c.name.slice(0,2)}</div>
+            <div>
+              <div class="client-name">${c.name}</div>
+              <div class="client-meta">${c.contractStart} ～ ${c.contractEnd}</div>
+            </div>
+          </div>
+          ${contractTag(ct)}
+        </div>
+        <div class="client-card-stats">
+          <div class="cs-item"><div class="cs-label">規格項目</div><div class="cs-val">${specs.length} 項</div></div>
+          <div class="cs-item"><div class="cs-label">合約金額</div><div class="cs-val">${c.totalContract?fmt(c.totalContract):'—'}</div></div>
+          <div class="cs-item"><div class="cs-label">廠商花費</div><div class="cs-val" style="color:var(--amber)">${vCost>0?fmt(vCost):'—'}</div></div>
+          <div class="cs-item"><div class="cs-label">外包花費</div><div class="cs-val" style="color:var(--blue)">${fCost>0?fmt(fCost):'—'}</div></div>
+        </div>
+      </div>`;
+    }).join('')}</div>
+  `;
+}
+
+// ─── REPORT TOTAL ────────────────────────────────────────────────
+function initReportSelects(){
+  ['rt-client','rv-client','rs-client','rf-client'].forEach(id=>{
+    const el=document.getElementById(id);
+    if(el&&el.options.length<=1)DB.clients.forEach(c=>{const o=document.createElement('option');o.value=c.id;o.textContent=c.name;el.appendChild(o);});
+  });
+  ['rt-vendor','rv-vendor'].forEach(id=>{
+    const el=document.getElementById(id);
+    if(el&&el.options.length<=1)DB.vendors.forEach(v=>{const o=document.createElement('option');o.value=v.id;o.textContent=v.name;el.appendChild(o);});
+  });
+  ['rt-freelancer','rs-freelancer','rf-person'].forEach(id=>{
+    const el=document.getElementById(id);
+    if(el&&el.options.length<=1)DB.freelancers.forEach(f=>{const o=document.createElement('option');o.value=f.id;o.textContent=f.name;el.appendChild(o);});
+  });
+  const months=[...new Set([...DB.vendorRecords.map(r=>r.month),...DB.freelancerRecords.map(r=>r.month)])].sort();
+  ['rv-month','rs-month','rf-month'].forEach(id=>{
+    const el=document.getElementById(id);
+    if(el&&el.options.length<=1)months.forEach(m=>{const o=document.createElement('option');o.value=m;o.textContent=m;el.appendChild(o);});
+  });
+}
+function renderReportTotal(){
+  initReportSelects();
+  const fc=document.getElementById('rt-client').value;
+  const ft=document.getElementById('rt-type').value;
+  const fv=document.getElementById('rt-vendor').value;
+  const ff=document.getElementById('rt-freelancer').value;
+
+  let specs=DB.specItems.filter(s=>{
+    if(fc&&s.clientId!==fc)return false;
+    if(ft&&s.type!==ft)return false;
+    return true;
+  });
+
+  if(fv){specs=specs.filter(s=>DB.vendorRecords.some(r=>r.specItemId===s.id&&r.vendorId===fv));}
+  if(ff){specs=specs.filter(s=>DB.freelancerRecords.some(r=>r.specItemId===s.id&&r.freelancerId===ff));}
+
+  const totalV=specs.reduce((a,s)=>a+specVendorCost(s.id),0);
+  const totalF=specs.reduce((a,s)=>a+specFreelancerCost(s.id),0);
+  const totalP=specs.reduce((a,s)=>a+s.totalPrice,0);
+  const totalC=specs.reduce((a,s)=>a+s.totalCost,0);
+
+  document.getElementById('report-total-content').innerHTML=`
+    <div class="stats-grid" style="grid-template-columns:repeat(4,1fr)">
+      <div class="stat-card"><div class="stat-label">篩選規格數</div><div class="stat-value">${specs.length}</div></div>
+      <div class="stat-card"><div class="stat-label">總售價</div><div class="stat-value">${fmt(totalP)}</div></div>
+      <div class="stat-card"><div class="stat-label">廠商花費</div><div class="stat-value" style="color:var(--amber)">${fmt(totalV)}</div></div>
+      <div class="stat-card"><div class="stat-label">外包花費</div><div class="stat-value" style="color:var(--blue)">${fmt(totalF)}</div></div>
+    </div>
+    <div class="table-wrap">
+      <div class="table-header"><div class="table-title">規格執行總表</div><div style="font-size:12px;color:var(--text3)">${specs.length} 筆</div></div>
+      <table>
+        <thead><tr><th>客戶</th><th>走期</th><th>規格</th><th>項目</th><th>執行廠商</th><th>外包人員</th><th style="text-align:right">售價</th><th style="text-align:right">廠商費用</th><th style="text-align:right">外包費用</th><th style="text-align:right">毛利率</th></tr></thead>
+        <tbody>${specs.map(s=>{
+          const c=DB.clients.find(x=>x.id===s.clientId);
+          const vc=specVendorCost(s.id),fc2=specFreelancerCost(s.id);
+          const margin=s.totalPrice>0?((s.totalPrice-s.totalCost)/s.totalPrice):null;
+          const vRecs=DB.vendorRecords.filter(r=>r.specItemId===s.id);
+          const fRecs=DB.freelancerRecords.filter(r=>r.specItemId===s.id);
+          const vNames=[...new Set(vRecs.map(r=>{const v=DB.vendors.find(x=>x.id===r.vendorId);return v?v.name:''}))].filter(Boolean).join('、');
+          const fNames=[...new Set(fRecs.map(r=>{const f=DB.freelancers.find(x=>x.id===r.freelancerId);return f?f.name:''}))].filter(Boolean).join('、');
+          return`<tr onclick="openDrawer('${s.clientId}')">
+            <td><strong>${c?c.name:'—'}</strong></td>
+            <td>${c?contractTag(contractType(c.contractStart,c.contractEnd)):'—'}</td>
+            <td>${typeTag(s.type)}</td>
+            <td><div style="font-weight:500">${s.name}</div><div style="font-size:11px;color:var(--text3)">${s.spec}</div></td>
+            <td>${vNames?`<span class="tag tag-amber">${vNames}</span>`:'—'}</td>
+            <td>${fNames?`<span class="tag tag-teal">${fNames}</span>`:'—'}</td>
+            <td style="text-align:right">${fmt(s.totalPrice)}</td>
+            <td style="text-align:right">${vc>0?fmt(vc):'—'}</td>
+            <td style="text-align:right">${fc2>0?fmt(fc2):'—'}</td>
+            <td style="text-align:right">${margin!=null?`<span class="tag ${margin>=0.5?'tag-green':margin>=0.2?'tag-amber':'tag-red'}">${pct(margin)}</span>`:'—'}</td>
+          </tr>`;
+        }).join('')}</tbody>
+      </table>
+    </div>
+  `;
+}
+
+// ─── REPORT VENDOR ───────────────────────────────────────────────
+function renderReportVendor(){
+  initReportSelects();
+  const fc=document.getElementById('rv-client').value;
+  const fv=document.getElementById('rv-vendor').value;
+  const fm=document.getElementById('rv-month').value;
+  const recs=DB.vendorRecords.filter(r=>{
+    if(fc&&r.clientId!==fc)return false;
+    if(fv&&r.vendorId!==fv)return false;
+    if(fm&&r.month!==fm)return false;
+    return true;
+  });
+  const totalAmt=recs.filter(r=>r.done).reduce((a,r)=>a+r.amount,0);
+  document.getElementById('report-vendor-content').innerHTML=`
+    <div class="stats-grid" style="grid-template-columns:repeat(3,1fr)">
+      <div class="stat-card"><div class="stat-label">記錄筆數</div><div class="stat-value">${recs.length}</div></div>
+      <div class="stat-card"><div class="stat-label">已執行</div><div class="stat-value">${recs.filter(r=>r.done).length}</div></div>
+      <div class="stat-card"><div class="stat-label">廠商費用合計</div><div class="stat-value" style="color:var(--amber)">${fmt(totalAmt)}</div></div>
+    </div>
+    ${renderVendorRecordsTable(fc||null)}
+  `;
+}
+
+// ─── REPORT SPEC ─────────────────────────────────────────────────
+function renderReportSpec(){
+  initReportSelects();
+  const fc=document.getElementById('rs-client').value;
+  const fm=document.getElementById('rs-month').value;
+  const ff=document.getElementById('rs-freelancer').value;
+
+  const fRecs=DB.freelancerRecords.filter(r=>{
+    if(fc&&r.clientId!==fc)return false;
+    if(fm&&r.month!==fm)return false;
+    if(ff&&r.freelancerId!==ff)return false;
+    return true;
+  });
+  const vRecs=DB.vendorRecords.filter(r=>{
+    if(fc&&r.clientId!==fc)return false;
+    if(fm&&r.month!==fm)return false;
+    return true;
+  });
+
+  // group by spec type
+  const byType={口碑:{vendor:0,freelancer:0,items:[]},社群:{vendor:0,freelancer:0,items:[]},廣告:{vendor:0,freelancer:0,items:[]},其他:{vendor:0,freelancer:0,items:[]}};
+  DB.specItems.forEach(s=>{
+    if(fc&&s.clientId!==fc)return;
+    const vv=vRecs.filter(r=>r.specItemId===s.id&&r.done).reduce((a,r)=>a+r.amount,0);
+    const ff2=fRecs.filter(r=>r.specItemId===s.id).reduce((a,r)=>a+r.total,0);
+    if(vv||ff2){
+      if(byType[s.type]){byType[s.type].vendor+=vv;byType[s.type].freelancer+=ff2;byType[s.type].items.push({spec:s,vv,ff2});}
+    }
+  });
+
+  document.getElementById('report-spec-content').innerHTML=`
+    <div class="stats-grid" style="grid-template-columns:repeat(4,1fr)">
+      ${Object.entries(byType).map(([k,v])=>`
+        <div class="stat-card">${typeTag(k)}<div class="stat-value" style="margin-top:8px">${fmt(v.vendor+v.freelancer)}</div><div class="stat-sub">廠商 ${fmt(v.vendor)}｜外包 ${fmt(v.freelancer)}</div></div>
+      `).join('')}
+    </div>
+    <div class="panel">
+      <div class="panel-title">外包人員執行統計（${fm||'全部月份'}）</div>
+      <table style="font-size:13px;width:100%;border-collapse:collapse">
+        <thead><tr><th style="padding:8px;text-align:left;font-size:11px;color:var(--text3)">人員</th><th style="padding:8px;text-align:left;font-size:11px;color:var(--text3)">月份</th><th style="padding:8px;text-align:left;font-size:11px;color:var(--text3)">客戶</th><th style="padding:8px;text-align:left;font-size:11px;color:var(--text3)">項目</th><th style="padding:8px;text-align:right;font-size:11px;color:var(--text3)">數量</th><th style="padding:8px;text-align:right;font-size:11px;color:var(--text3)">費用</th></tr></thead>
+        <tbody>${fRecs.map(r=>{
+          const f=DB.freelancers.find(x=>x.id===r.freelancerId);
+          const c=DB.clients.find(x=>x.id===r.clientId);
+          const s=DB.specItems.find(x=>x.id===r.specItemId);
+          return`<tr style="border-bottom:1px solid var(--border)">
+            <td style="padding:8px"><span class="tag tag-teal">${f?f.name:'—'}</span></td>
+            <td style="padding:8px;color:var(--text3)">${r.month}</td>
+            <td style="padding:8px">${c?c.name:'—'}</td>
+            <td style="padding:8px">${s?typeTag(s.type)+' '+s.name:'—'}／${r.itemType}</td>
+            <td style="padding:8px;text-align:right">${r.qty}</td>
+            <td style="padding:8px;text-align:right;font-weight:500">${fmt(r.total)}</td>
+          </tr>`;
+        }).join('')}</tbody>
+      </table>
+    </div>
+  `;
+}
+
+// ─── REPORT FREELANCER ───────────────────────────────────────────
+function renderReportFreelancer(){
+  initReportSelects();
+  const fp=document.getElementById('rf-person').value;
+  const fm=document.getElementById('rf-month').value;
+  const fc=document.getElementById('rf-client').value;
+
+  const recs=DB.freelancerRecords.filter(r=>{
+    if(fp&&r.freelancerId!==fp)return false;
+    if(fm&&r.month!==fm)return false;
+    if(fc&&r.clientId!==fc)return false;
+    return true;
+  });
+
+  // group by person
+  const byPerson={};
+  recs.forEach(r=>{
+    if(!byPerson[r.freelancerId])byPerson[r.freelancerId]={recs:[],total:0};
+    byPerson[r.freelancerId].recs.push(r);
+    byPerson[r.freelancerId].total+=r.total;
+  });
+
+  document.getElementById('report-freelancer-content').innerHTML=`
+    <div class="stats-grid" style="grid-template-columns:repeat(3,1fr)">
+      <div class="stat-card"><div class="stat-label">記錄筆數</div><div class="stat-value">${recs.length}</div></div>
+      <div class="stat-card"><div class="stat-label">外包人員數</div><div class="stat-value">${Object.keys(byPerson).length}</div></div>
+      <div class="stat-card"><div class="stat-label">外包費用合計</div><div class="stat-value" style="color:var(--blue)">${fmt(recs.reduce((a,r)=>a+r.total,0))}</div></div>
+    </div>
+    ${Object.entries(byPerson).map(([fid,data])=>{
+      const f=DB.freelancers.find(x=>x.id===fid);
+      const byMonth={};
+      data.recs.forEach(r=>{if(!byMonth[r.month])byMonth[r.month]=0;byMonth[r.month]+=r.total;});
+      return`<div class="table-wrap" style="margin-bottom:12px">
+        <div class="table-header">
+          <div class="table-title"><span class="tag tag-teal" style="margin-right:6px">${f?f.name:'—'}</span>${f?f.type:''}</div>
+          <div style="display:flex;gap:12px;font-size:12px">
+            ${Object.entries(byMonth).map(([m,t])=>`<span style="color:var(--text3)">${m} <strong style="color:var(--text)">${fmt(t)}</strong></span>`).join('')}
+            <strong>${fmt(data.total)}</strong>
+          </div>
+        </div>
+        <table>
+          <thead><tr><th>月份</th><th>客戶</th><th>規格項目</th><th>項目類型</th><th style="text-align:right">數量</th><th style="text-align:right">單價</th><th style="text-align:right">小計</th><th>狀態</th></tr></thead>
+          <tbody>${data.recs.map(r=>{
+            const c=DB.clients.find(x=>x.id===r.clientId);
+            const s=DB.specItems.find(x=>x.id===r.specItemId);
+            return`<tr>
+              <td style="color:var(--text3)">${r.month}</td>
+              <td>${c?c.name:'—'}</td>
+              <td>${s?typeTag(s.type)+' '+s.name:'—'}</td>
+              <td>${r.itemType}</td>
+              <td style="text-align:right">${r.qty}</td>
+              <td style="text-align:right;color:var(--text2)">${fmt(r.unitCost)}</td>
+              <td style="text-align:right;font-weight:500">${fmt(r.total)}</td>
+              <td><span class="tag ${r.status==='完成'?'tag-green':'tag-amber'}">${r.status}</span></td>
+            </tr>`;
+          }).join('')}</tbody>
+        </table>
+      </div>`;
+    }).join('')||`<div style="text-align:center;padding:40px;color:var(--text3)">目前無符合條件的記錄</div>`}
+  `;
+}
+
+// ─── SETTINGS ────────────────────────────────────────────────────
+function renderSettings(){
+  document.getElementById('settings-content').innerHTML=`
+    <div class="two-col">
+      <div class="table-wrap">
+        <div class="table-header"><div class="table-title">廠商（口碑帳號商）</div></div>
+        <table>
+          <thead><tr><th>名稱</th><th>類型</th><th>聯絡</th><th></th></tr></thead>
+          <tbody>${DB.vendors.map(v=>`<tr>
+            <td><strong>${v.name}</strong></td>
+            <td><span class="tag tag-amber">${v.type}</span></td>
+            <td style="color:var(--text3)">${v.contact||'—'}</td>
+            <td><button class="btn btn-sm" onclick="openEditVendor('${v.id}')">編輯</button></td>
+          </tr>`).join('')}</tbody>
+        </table>
+      </div>
+      <div class="table-wrap">
+        <div class="table-header"><div class="table-title">外包人員</div></div>
+        <table>
+          <thead><tr><th>姓名</th><th>類型</th><th>報價筆數</th><th></th></tr></thead>
+          <tbody>${DB.freelancers.map(f=>`<tr>
+            <td><strong>${f.name}</strong></td>
+            <td><span class="tag tag-teal">${f.type}</span></td>
+            <td style="color:var(--text3)">${Object.keys(f.rates).length} 項</td>
+            <td><button class="btn btn-sm" onclick="openEditFreelancer('${f.id}')">編輯</button></td>
+          </tr>`).join('')}</tbody>
+        </table>
+      </div>
+    </div>
+  `;
+}
+
+// ─── ADD / EDIT FORMS ────────────────────────────────────────────
+function openAddClient(){
+  openModal('新增客戶',`
+    <div class="form-row"><div class="form-group"><label class="form-label">客戶名稱 *</label><input class="form-input" id="f-name" placeholder="公司名稱"></div><div class="form-group"><label class="form-label">統一編號</label><input class="form-input" id="f-ubn"></div></div>
+    <div class="form-row"><div class="form-group"><label class="form-label">合約起日 *</label><input class="form-input" type="date" id="f-start"></div><div class="form-group"><label class="form-label">合約迄日 *</label><input class="form-input" type="date" id="f-end"></div></div>
+    <div class="form-row"><div class="form-group"><label class="form-label">聯絡人</label><input class="form-input" id="f-contact"></div><div class="form-group"><label class="form-label">執行PM</label><input class="form-input" id="f-pm"></div></div>
+    <div class="form-row"><div class="form-group"><label class="form-label">付款方式</label><select class="form-input" id="f-pay"><option>月付</option><option>季付</option><option>半年付</option><option>年付</option></select></div><div class="form-group"><label class="form-label">合約總金額</label><input class="form-input" type="number" id="f-total" placeholder="0"></div></div>
+    <div class="form-group"><label class="form-label">備註</label><textarea class="form-input" id="f-note" rows="2"></textarea></div>
+  `,()=>{
+    const name=document.getElementById('f-name').value.trim();
+    const start=document.getElementById('f-start').value;
+    const end=document.getElementById('f-end').value;
+    if(!name||!start||!end)return alert('請填寫必填欄位');
+    DB.clients.push({id:nextId(DB.clients,'C'),name,ubn:document.getElementById('f-ubn').value,contact:document.getElementById('f-contact').value,pm:document.getElementById('f-pm').value,contractStart:start,contractEnd:end,payMethod:document.getElementById('f-pay').value,totalContract:Number(document.getElementById('f-total').value)||0,note:document.getElementById('f-note').value});
+    closeModal();renderClients();
+  });
+}
+
+function openEditClient(clientId){
+  const c=DB.clients.find(x=>x.id===clientId);
+  if(!c)return;
+  openModal('編輯客戶：'+c.name,`
+    <div class="form-row"><div class="form-group"><label class="form-label">客戶名稱 *</label><input class="form-input" id="f-name" value="${c.name}"></div><div class="form-group"><label class="form-label">統一編號</label><input class="form-input" id="f-ubn" value="${c.ubn}"></div></div>
+    <div class="form-row"><div class="form-group"><label class="form-label">合約起日</label><input class="form-input" type="date" id="f-start" value="${c.contractStart}"></div><div class="form-group"><label class="form-label">合約迄日</label><input class="form-input" type="date" id="f-end" value="${c.contractEnd}"></div></div>
+    <div class="form-row"><div class="form-group"><label class="form-label">聯絡人</label><input class="form-input" id="f-contact" value="${c.contact}"></div><div class="form-group"><label class="form-label">執行PM</label><input class="form-input" id="f-pm" value="${c.pm}"></div></div>
+    <div class="form-row"><div class="form-group"><label class="form-label">付款方式</label><select class="form-input" id="f-pay"><option ${c.payMethod==='月付'?'selected':''}>月付</option><option ${c.payMethod==='季付'?'selected':''}>季付</option><option ${c.payMethod==='半年付'?'selected':''}>半年付</option><option ${c.payMethod==='年付'?'selected':''}>年付</option></select></div><div class="form-group"><label class="form-label">合約總金額</label><input class="form-input" type="number" id="f-total" value="${c.totalContract}"></div></div>
+    <div class="form-group"><label class="form-label">備註</label><textarea class="form-input" id="f-note" rows="2">${c.note}</textarea></div>
+  `,()=>{
+    c.name=document.getElementById('f-name').value.trim();
+    c.ubn=document.getElementById('f-ubn').value;
+    c.contractStart=document.getElementById('f-start').value;
+    c.contractEnd=document.getElementById('f-end').value;
+    c.contact=document.getElementById('f-contact').value;
+    c.pm=document.getElementById('f-pm').value;
+    c.payMethod=document.getElementById('f-pay').value;
+    c.totalContract=Number(document.getElementById('f-total').value)||0;
+    c.note=document.getElementById('f-note').value;
+    closeModal();renderClients();
+    if(document.getElementById('client-drawer').classList.contains('open'))renderDrawerBody(clientId);
+  });
+}
+
+function openAddSpec(clientId){
+  const c=DB.clients.find(x=>x.id===clientId);
+  openModal('新增規格項目 — '+c.name,`
+    <div class="form-row"><div class="form-group"><label class="form-label">規格類型 *</label><select class="form-input" id="f-type"><option>口碑</option><option>社群</option><option>廣告</option><option>其他</option></select></div><div class="form-group"><label class="form-label">項目名稱 *</label><input class="form-input" id="f-name" placeholder="如：即時回文、FB貼文"></div></div>
+    <div class="form-group"><label class="form-label">規格說明</label><input class="form-input" id="f-spec" placeholder="如：300字+5回文"></div>
+    <div class="form-row3"><div class="form-group"><label class="form-label">數量 *</label><input class="form-input" type="number" id="f-qty" placeholder="0"></div><div class="form-group"><label class="form-label">單位</label><select class="form-input" id="f-unit"><option>則</option><option>篇</option><option>月</option><option>年</option><option>人</option><option>次</option></select></div><div class="form-group"><label class="form-label">單價（售）</label><input class="form-input" type="number" id="f-price" placeholder="0"></div></div>
+    <div class="form-row"><div class="form-group"><label class="form-label">執行成本（單）</label><input class="form-input" type="number" id="f-cost" placeholder="0"></div><div class="form-group"><label class="form-label">（系統自動計算總價、總成本、毛利）</label><div style="font-size:11px;color:var(--text3);margin-top:8px">儲存後可在規格表查看</div></div></div>
+  `,()=>{
+    const name=document.getElementById('f-name').value.trim();
+    const qty=Number(document.getElementById('f-qty').value)||0;
+    const price=Number(document.getElementById('f-price').value)||0;
+    const cost=Number(document.getElementById('f-cost').value)||0;
+    if(!name)return alert('請填寫項目名稱');
+    DB.specItems.push({id:nextId(DB.specItems,'S'),clientId,type:document.getElementById('f-type').value,name,spec:document.getElementById('f-spec').value,qty,unit:document.getElementById('f-unit').value,price,cost,totalPrice:qty*price,totalCost:qty*cost});
+    closeModal();renderDrawerBody(clientId);
+  });
+}
+
+function openAddVendorRecord(clientId){
+  const clients=clientId?[DB.clients.find(x=>x.id===clientId)]:DB.clients;
+  const specs=clientId?DB.specItems.filter(s=>s.clientId===clientId&&(s.type==='口碑')):DB.specItems.filter(s=>s.type==='口碑');
+  openModal('新增廠商執行記錄',`
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">客戶 *</label><select class="form-input" id="f-client" onchange="updateSpecOptions(this.value)">${DB.clients.map(c=>`<option value="${c.id}" ${c.id===clientId?'selected':''}>${c.name}</option>`).join('')}</select></div>
+      <div class="form-group"><label class="form-label">規格項目 *</label><select class="form-input" id="f-spec">${specs.map(s=>`<option value="${s.id}">${s.type}・${s.name}</option>`).join('')}</select></div>
+    </div>
+    <div class="form-row"><div class="form-group"><label class="form-label">廠商 *</label><select class="form-input" id="f-vendor">${DB.vendors.map(v=>`<option value="${v.id}">${v.name}</option>`).join('')}</select></div><div class="form-group"><label class="form-label">月份</label><input class="form-input" type="month" id="f-month"></div></div>
+    <div class="form-row"><div class="form-group"><label class="form-label">發布日期</label><input class="form-input" type="date" id="f-date"></div><div class="form-group"><label class="form-label">平台</label><select class="form-input" id="f-platform"><option>Dcard</option><option>Threads</option><option>PTT</option><option>FB</option><option>IG</option><option>其他</option></select></div></div>
+    <div class="form-row"><div class="form-group"><label class="form-label">板塊</label><input class="form-input" id="f-board" placeholder="如：醫美、美妝"></div><div class="form-group"><label class="form-label">項目類型</label><select class="form-input" id="f-itype"><option>回文</option><option>發文</option></select></div></div>
+    <div class="form-group"><label class="form-label">文章標題</label><input class="form-input" id="f-title"></div>
+    <div class="form-row"><div class="form-group"><label class="form-label">帳號</label><input class="form-input" id="f-account"></div><div class="form-group"><label class="form-label">金額</label><input class="form-input" type="number" id="f-amount" placeholder="0"></div></div>
+    <div class="form-row"><div class="form-group"><label class="form-label">上線連結</label><input class="form-input" id="f-link" placeholder="https://..."></div><div class="form-group"><label class="form-label">執行狀態</label><select class="form-input" id="f-done"><option value="true">已執行</option><option value="false">未執行</option></select></div></div>
+  `,()=>{
+    const cid=document.getElementById('f-client').value;
+    const sid=document.getElementById('f-spec').value;
+    const mo=document.getElementById('f-month').value;
+    if(!cid||!sid)return alert('請填寫必要欄位');
+    DB.vendorRecords.push({id:nextId(DB.vendorRecords,'VR'),specItemId:sid,clientId:cid,vendorId:document.getElementById('f-vendor').value,date:document.getElementById('f-date').value,platform:document.getElementById('f-platform').value,board:document.getElementById('f-board').value,itemType:document.getElementById('f-itype').value,title:document.getElementById('f-title').value,account:document.getElementById('f-account').value,link:document.getElementById('f-link').value,done:document.getElementById('f-done').value==='true',amount:Number(document.getElementById('f-amount').value)||0,month:mo});
+    closeModal();
+    if(document.getElementById('client-drawer').classList.contains('open'))renderDrawerBody(cid);
+    else renderReportVendor();
+  });
+}
+
+function openAddFreelancerRecord(clientId){
+  openModal('新增外包執行記錄',`
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">客戶 *</label><select class="form-input" id="f-client">${DB.clients.map(c=>`<option value="${c.id}" ${c.id===clientId?'selected':''}>${c.name}</option>`).join('')}</select></div>
+      <div class="form-group"><label class="form-label">規格項目 *</label><select class="form-input" id="f-spec">${DB.specItems.filter(s=>!clientId||s.clientId===clientId).map(s=>`<option value="${s.id}">${s.type}・${s.name}</option>`).join('')}</select></div>
+    </div>
+    <div class="form-row"><div class="form-group"><label class="form-label">外包人員 *</label><select class="form-input" id="f-person" onchange="updateRateHint(this.value)">${DB.freelancers.map(f=>`<option value="${f.id}">${f.name}（${f.type}）</option>`).join('')}</select></div><div class="form-group"><label class="form-label">月份</label><input class="form-input" type="month" id="f-month"></div></div>
+    <div class="form-row"><div class="form-group"><label class="form-label">項目類型</label><input class="form-input" id="f-itype" placeholder="如：即時回文-常規"></div><div class="form-group"><label class="form-label">數量</label><input class="form-input" type="number" id="f-qty" placeholder="1" oninput="calcTotal()"></div></div>
+    <div class="form-row"><div class="form-group"><label class="form-label">單價（依報價單）</label><input class="form-input" type="number" id="f-unitcost" placeholder="0" oninput="calcTotal()"></div><div class="form-group"><label class="form-label">小計</label><input class="form-input" id="f-total" placeholder="自動計算" readonly style="background:var(--bg)"></div></div>
+    <div id="rate-hint" style="font-size:11px;color:var(--text3);margin-top:-4px;margin-bottom:8px"></div>
+    <div class="form-group"><label class="form-label">狀態</label><select class="form-input" id="f-status"><option>完成</option><option>執行中</option><option>待確認</option></select></div>
+  `,()=>{
+    const cid=document.getElementById('f-client').value;
+    const sid=document.getElementById('f-spec').value;
+    if(!cid||!sid)return alert('請填寫必要欄位');
+    const qty=Number(document.getElementById('f-qty').value)||1;
+    const uc=Number(document.getElementById('f-unitcost').value)||0;
+    DB.freelancerRecords.push({id:nextId(DB.freelancerRecords,'FR'),specItemId:sid,clientId:cid,freelancerId:document.getElementById('f-person').value,month:document.getElementById('f-month').value,itemType:document.getElementById('f-itype').value,qty,unitCost:uc,total:qty*uc,status:document.getElementById('f-status').value});
+    closeModal();
+    if(document.getElementById('client-drawer').classList.contains('open'))renderDrawerBody(cid);
+    else renderReportFreelancer();
+  });
+}
+function calcTotal(){
+  const q=Number(document.getElementById('f-qty').value)||0;
+  const u=Number(document.getElementById('f-unitcost').value)||0;
+  document.getElementById('f-total').value=q&&u?'$'+(q*u).toLocaleString():'';
+}
+function updateRateHint(fid){
+  const f=DB.freelancers.find(x=>x.id===fid);
+  const el=document.getElementById('rate-hint');
+  if(!el)return;
+  if(f&&Object.keys(f.rates).length){el.textContent='報價參考：'+Object.entries(f.rates).map(([k,v])=>`${k} $${v}`).join('　');}
+  else el.textContent='';
+}
+
+function openAddVendor(){
+  openModal('新增廠商',`
+    <div class="form-group"><label class="form-label">廠商名稱 *</label><input class="form-input" id="f-name"></div>
+    <div class="form-group"><label class="form-label">類型</label><input class="form-input" id="f-type" value="口碑帳號商"></div>
+    <div class="form-group"><label class="form-label">聯絡方式</label><input class="form-input" id="f-contact"></div>
+    <div class="form-group"><label class="form-label">備註</label><textarea class="form-input" id="f-note" rows="2"></textarea></div>
+  `,()=>{
+    const name=document.getElementById('f-name').value.trim();
+    if(!name)return alert('請填寫廠商名稱');
+    DB.vendors.push({id:nextId(DB.vendors,'V'),name,type:document.getElementById('f-type').value,contact:document.getElementById('f-contact').value,note:document.getElementById('f-note').value});
+    closeModal();renderSettings();
+  });
+}
+function openEditVendor(vid){
+  const v=DB.vendors.find(x=>x.id===vid);
+  openModal('編輯廠商：'+v.name,`
+    <div class="form-group"><label class="form-label">廠商名稱</label><input class="form-input" id="f-name" value="${v.name}"></div>
+    <div class="form-group"><label class="form-label">類型</label><input class="form-input" id="f-type" value="${v.type}"></div>
+    <div class="form-group"><label class="form-label">聯絡方式</label><input class="form-input" id="f-contact" value="${v.contact}"></div>
+    <div class="form-group"><label class="form-label">備註</label><textarea class="form-input" id="f-note" rows="2">${v.note}</textarea></div>
+  `,()=>{
+    v.name=document.getElementById('f-name').value;v.type=document.getElementById('f-type').value;v.contact=document.getElementById('f-contact').value;v.note=document.getElementById('f-note').value;
+    closeModal();renderSettings();
+  });
+}
+function openAddFreelancer(){
+  openModal('新增外包人員',`
+    <div class="form-row"><div class="form-group"><label class="form-label">姓名 *</label><input class="form-input" id="f-name"></div><div class="form-group"><label class="form-label">類型</label><input class="form-input" id="f-type" placeholder="如：文案/回文"></div></div>
+    <div class="form-group"><label class="form-label">報價項目（每行一筆，格式：項目名稱,單價）</label><textarea class="form-input" id="f-rates" rows="4" placeholder="即時回文-常規,150&#10;短圖文,850&#10;長圖文,1100"></textarea></div>
+  `,()=>{
+    const name=document.getElementById('f-name').value.trim();
+    if(!name)return alert('請填寫姓名');
+    const rates={};
+    document.getElementById('f-rates').value.split('\n').forEach(line=>{const[k,v]=line.split(',');if(k&&v)rates[k.trim()]=Number(v.trim())||0;});
+    DB.freelancers.push({id:nextId(DB.freelancers,'F'),name,type:document.getElementById('f-type').value,rates});
+    closeModal();renderSettings();
+  });
+}
+function openEditFreelancer(fid){
+  const f=DB.freelancers.find(x=>x.id===fid);
+  const rateText=Object.entries(f.rates).map(([k,v])=>`${k},${v}`).join('\n');
+  openModal('編輯外包人員：'+f.name,`
+    <div class="form-row"><div class="form-group"><label class="form-label">姓名</label><input class="form-input" id="f-name" value="${f.name}"></div><div class="form-group"><label class="form-label">類型</label><input class="form-input" id="f-type" value="${f.type}"></div></div>
+    <div class="form-group"><label class="form-label">報價項目（每行：項目名稱,單價）</label><textarea class="form-input" id="f-rates" rows="6">${rateText}</textarea></div>
+  `,()=>{
+    f.name=document.getElementById('f-name').value;f.type=document.getElementById('f-type').value;
+    const rates={};
+    document.getElementById('f-rates').value.split('\n').forEach(line=>{const[k,v]=line.split(',');if(k&&v)rates[k.trim()]=Number(v.trim())||0;});
+    f.rates=rates;
+    closeModal();renderSettings();
+  });
+}
+
+// ─── INIT ────────────────────────────────────────────────────────
+renderDashboard();
+</script>
+</body>
+</html>
