@@ -45,7 +45,7 @@ body{font-family:'Noto Sans TC',system-ui,sans-serif;background:var(--bg);color:
 
 /* Main */
 .main{flex:1;display:flex;flex-direction:column;overflow:hidden;height:100vh}
-.topbar{background:var(--surface);border-bottom:1px solid var(--border);padding:14px 24px;display:flex;align-items:center;gap:12px;flex-shrink:0}
+.topbar{background:var(--surface);border-bottom:1px solid var(--border);padding:14px 24px;display:flex;align-items:center;gap:12px;flex-shrink:0;flex-wrap:wrap}
 .topbar-title{font-size:16px;font-weight:600;flex:1}
 .topbar-sub{font-size:12px;color:var(--text3);margin-top:1px}
 .content{flex:1;overflow-y:auto;padding:20px 24px}
@@ -220,11 +220,72 @@ select.form-input{cursor:pointer}
 .vendor-card-body{padding:8px 4px;max-height:320px;overflow-y:auto}
 .platform-section{padding:4px 12px 8px}
 .platform-label{font-size:10px;color:var(--text3);font-weight:600;text-transform:uppercase;letter-spacing:.06em;padding:6px 2px 4px;border-bottom:1px solid var(--border);margin-bottom:4px}
+
+/* ── MOBILE BOTTOM NAV ───────────────────────────────────────── */
+.mobile-nav{display:none;position:fixed;bottom:0;left:0;right:0;background:var(--surface);border-top:1px solid var(--border);z-index:800;padding:0 4px;padding-bottom:env(safe-area-inset-bottom)}
+.mobile-nav-inner{display:flex;align-items:stretch;gap:0}
+.mnav-item{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;padding:8px 4px;font-size:10px;color:var(--text3);border:none;background:none;cursor:pointer;font-family:inherit;min-height:52px;position:relative}
+.mnav-item.active{color:var(--blue)}
+.mnav-item svg{width:20px;height:20px;flex-shrink:0}
+.mnav-more-menu{display:none;position:fixed;bottom:60px;left:0;right:0;background:var(--surface);border-top:1px solid var(--border);padding:8px 12px;z-index:799;box-shadow:0 -4px 20px rgba(0,0,0,.1)}
+.mnav-more-menu.open{display:block}
+.mnav-more-item{display:flex;align-items:center;gap:10px;padding:12px 8px;font-size:14px;color:var(--text2);border:none;background:none;width:100%;cursor:pointer;font-family:inherit;border-radius:8px}
+.mnav-more-item.active{color:var(--blue);font-weight:500;background:var(--blue-bg)}
+.mnav-more-item svg{width:18px;height:18px;flex-shrink:0}
+
+/* ── RESPONSIVE BREAKPOINTS ─────────────────────────────────── */
+@media (max-width: 768px) {
+  body{flex-direction:column;height:100dvh;overflow:hidden}
+  .sidebar{display:none}
+  .mobile-nav{display:block}
+  .main{height:calc(100dvh - 60px);padding-bottom:0}
+  .topbar{padding:10px 14px;gap:8px}
+  .topbar-title{font-size:15px}
+  .topbar-sub{display:none}
+  .content{padding:12px 14px}
+  .stats-grid{grid-template-columns:repeat(2,1fr)!important;gap:8px}
+  .stat-value{font-size:18px!important}
+  .two-col{grid-template-columns:1fr!important}
+  .three-col{grid-template-columns:1fr 1fr!important}
+  .cards-grid{grid-template-columns:1fr!important}
+  .vendor-grid{grid-template-columns:1fr!important}
+  .report-filter-bar{padding:8px 12px;gap:6px;overflow-x:auto;flex-wrap:nowrap;-webkit-overflow-scrolling:touch}
+  .report-filter-bar .filter-label{white-space:nowrap;flex-shrink:0}
+  .filter-select{font-size:13px}
+  table{font-size:12px}
+  thead th{padding:8px 8px;font-size:10px}
+  tbody td{padding:8px 8px}
+  .btn{padding:6px 10px;font-size:12px}
+  .btn-primary{padding:8px 12px}
+  .modal{width:95vw!important;max-height:88dvh!important}
+  .modal-body{padding:14px 16px}
+  .form-row{grid-template-columns:1fr!important}
+  .form-row3{grid-template-columns:1fr 1fr!important}
+  .drawer{width:100vw!important;top:auto;bottom:0;height:90dvh;border-radius:16px 16px 0 0;border-top:1px solid var(--border);border-left:none}
+  .drawer.open{transform:translateY(0)!important}
+  .drawer:not(.open){transform:translateY(100%)!important}
+  .table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
+  .ms-dropdown{min-width:200px}
+  /* Hide less critical table columns on mobile */
+  .hide-mobile{display:none!important}
+  /* Mobile card for client list */
+  .client-card{padding:14px}
+  .ra-summary-bar-mobile{flex-wrap:wrap!important}
+  /* Filter bar toggle */
+  .filter-toggle-btn{display:flex!important}
+  .filter-collapsible{transition:max-height .25s ease}
+  .filter-collapsible.collapsed{max-height:0;overflow:hidden;padding:0!important;border:none!important}
+}
+@media (max-width: 480px) {
+  .stats-grid{grid-template-columns:1fr 1fr!important}
+  .stat-value{font-size:16px!important}
+  .topbar{padding:8px 12px}
+}
 </style>
 </head>
 <body>
 
-<!-- Sidebar -->
+<!-- Sidebar (desktop only) -->
 <div class="sidebar">
   <div class="logo-area">
     <div class="logo-name">樂法行銷</div>
@@ -274,6 +335,48 @@ select.form-input{cursor:pointer}
     </div>
   </nav>
   <div class="sidebar-footer">© 2026 樂法網路行銷</div>
+</div>
+
+<!-- Mobile Bottom Nav -->
+<div class="mobile-nav">
+  <div class="mobile-nav-inner">
+    <button class="mnav-item active" id="mnav-dashboard" onclick="showPage('dashboard',this);closeMobileMore()">
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="1" width="6" height="6" rx="1"/><rect x="9" y="1" width="6" height="6" rx="1"/><rect x="1" y="9" width="6" height="6" rx="1"/><rect x="9" y="9" width="6" height="6" rx="1"/></svg>
+      儀表板
+    </button>
+    <button class="mnav-item" id="mnav-clients" onclick="showPage('clients',this);closeMobileMore()">
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="5" r="3"/><path d="M2 14c0-3.3 2.7-6 6-6s6 2.7 6 6"/></svg>
+      客戶
+    </button>
+    <button class="mnav-item" id="mnav-receivable" onclick="showPage('receivable',this);closeMobileMore()">
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="3" width="14" height="11" rx="2"/><path d="M5 3V1M11 3V1M1 7h14"/></svg>
+      帳款
+    </button>
+    <button class="mnav-item" id="mnav-report-total" onclick="showPage('report-total',this);closeMobileMore()">
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="1" width="14" height="14" rx="2"/><path d="M5 8h6M5 11h4M5 5h6"/></svg>
+      總表
+    </button>
+    <button class="mnav-item" id="mnav-more" onclick="toggleMobileMore()">
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="4" cy="8" r="1"/><circle cx="8" cy="8" r="1"/><circle cx="12" cy="8" r="1"/></svg>
+      更多
+    </button>
+  </div>
+</div>
+
+<!-- Mobile More Menu -->
+<div class="mnav-more-menu" id="mnav-more-menu">
+  <button class="mnav-more-item" id="mnav-m-report-vendor" onclick="showPage('report-vendor',this);closeMobileMore()">
+    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 4h12v9a1 1 0 01-1 1H3a1 1 0 01-1-1V4z"/><path d="M5 4V2h6v2"/></svg>廠商執行表
+  </button>
+  <button class="mnav-more-item" id="mnav-m-report-spec" onclick="showPage('report-spec',this);closeMobileMore()">
+    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 12V4l4-2 4 2 4-2v8l-4 2-4-2-4 2z"/></svg>規格統計表
+  </button>
+  <button class="mnav-more-item" id="mnav-m-report-freelancer" onclick="showPage('report-freelancer',this);closeMobileMore()">
+    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="6" cy="5" r="2.5"/><path d="M1 13c0-2.8 2.2-5 5-5"/><path d="M10 9l1.5 1.5L14 8"/></svg>外包人員統計
+  </button>
+  <button class="mnav-more-item" id="mnav-m-settings" onclick="showPage('settings',this);closeMobileMore()">
+    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="2"/><path d="M8 1v2M8 13v2M1 8h2M13 8h2M3.1 3.1l1.4 1.4M11.5 11.5l1.4 1.4M3.1 12.9l1.4-1.4M11.5 4.5l1.4-1.4"/></svg>廠商 / 外包人員
+  </button>
 </div>
 
 <!-- Main Content -->
@@ -646,12 +749,35 @@ function nextId(arr,prefix){const nums=arr.map(x=>parseInt(x.id.replace(prefix,'
 function showPage(id,btn){
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   document.getElementById('page-'+id).classList.add('active');
+  // Desktop sidebar
   document.querySelectorAll('.nav-item').forEach(b=>b.classList.remove('active'));
-  if(btn)btn.classList.add('active');
+  if(btn&&btn.classList.contains('nav-item'))btn.classList.add('active');
+  // Mobile bottom nav sync
+  document.querySelectorAll('.mnav-item').forEach(b=>b.classList.remove('active'));
+  document.querySelectorAll('.mnav-more-item').forEach(b=>b.classList.remove('active'));
+  const mnavId = 'mnav-'+id;
+  const mnavEl = document.getElementById(mnavId);
+  if(mnavEl){ mnavEl.classList.add('active'); }
+  else {
+    // it's in the "more" menu
+    const mMoreEl = document.getElementById('mnav-m-'+id);
+    if(mMoreEl){ mMoreEl.classList.add('active'); document.getElementById('mnav-more')?.classList.add('active'); }
+  }
   closeDrawer();
   const renders={dashboard:renderDashboard,clients:renderClients,receivable:renderReceivable,'report-total':renderReportTotal,'report-vendor':renderReportVendor,'report-spec':renderReportSpec,'report-freelancer':renderReportFreelancer,settings:renderSettings};
   if(renders[id])renders[id]();
 }
+function toggleMobileMore(){
+  document.getElementById('mnav-more-menu')?.classList.toggle('open');
+}
+function closeMobileMore(){
+  document.getElementById('mnav-more-menu')?.classList.remove('open');
+}
+document.addEventListener('click',e=>{
+  const menu=document.getElementById('mnav-more-menu');
+  const btn=document.getElementById('mnav-more');
+  if(menu&&btn&&!menu.contains(e.target)&&!btn.contains(e.target))menu.classList.remove('open');
+});
 
 // ─── MODAL ──────────────────────────────────────────────────────
 function openModal(title,bodyHtml,onConfirm){
@@ -1609,7 +1735,10 @@ function openAddReceivable(){
       <div class="form-group"><label class="form-label">簽約日</label><input class="form-input" type="date" id="f-sign"></div>
     </div>
     <div class="form-row">
-      <div class="form-group"><label class="form-label">客戶 *</label><select class="form-input" id="f-client">${DB.clients.map(c=>`<option value="${c.id}">${c.name}</option>`).join('')}</select></div>
+      <div class="form-group"><label class="form-label">客戶 *</label>
+        <input class="form-input" id="f-client-name" list="ra-cl-list" placeholder="輸入或選擇客戶">
+        <datalist id="ra-cl-list">${DB.clients.map(c=>`<option value="${c.name}">`).join('')}</datalist>
+      </div>
       <div class="form-group"><label class="form-label">未稅金額</label><input class="form-input" type="number" id="f-amount" placeholder="0" oninput="calcTax()"></div>
     </div>
     <div class="form-row">
@@ -1617,34 +1746,38 @@ function openAddReceivable(){
       <div class="form-group"><label class="form-label">含稅總計</label><input class="form-input" id="f-total" placeholder="自動計算" readonly style="background:var(--bg)"></div>
     </div>
     <div class="form-group"><label class="form-label">備註</label><input class="form-input" id="f-note"></div>
-    <div class="form-group">
-      <label class="form-label">收款期數</label>
-      <select class="form-input" id="f-periods" onchange="renderPaymentFields()">
-        <option value="1">1 期</option><option value="2">2 期</option><option value="3">3 期</option>
-        <option value="4">4 期</option><option value="6">6 期</option><option value="9">9 期</option><option value="12">12 期</option>
-      </select>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">收款期數</label>
+        <select class="form-input" id="f-periods" onchange="renderPaymentFields()">
+          <option value="1">1 期</option><option value="2">2 期</option><option value="3">3 期</option>
+          <option value="4">4 期</option><option value="6">6 期</option><option value="9">9 期</option>
+          <option value="12">12 期</option><option value="custom">其他（自訂）</option>
+        </select>
+      </div>
+      <div class="form-group" id="custom-period-wrap" style="display:none">
+        <label class="form-label">自訂期數</label>
+        <input class="form-input" type="number" id="f-custom-periods" min="1" max="36" placeholder="輸入期數" oninput="renderPaymentFields()">
+      </div>
     </div>
     <div id="payment-fields" style="margin-top:8px"></div>
   `,()=>{
-    const cid = document.getElementById('f-client').value;
-    const amt = Number(document.getElementById('f-amount').value)||0;
-    const tax = Number(document.getElementById('f-tax').value)||0;
-    const total = amt+tax;
-    const periods = Number(document.getElementById('f-periods').value)||1;
-    const payments = [];
+    const clientName=document.getElementById('f-client-name').value.trim();
+    if(!clientName)return alert('請填寫客戶名稱');
+    const matchC=DB.clients.find(x=>x.name===clientName);
+    const cid=matchC?matchC.id:clientName;
+    const amt=Number(document.getElementById('f-amount').value)||0;
+    const tax=Number(document.getElementById('f-tax').value)||0;
+    const total=amt+tax;
+    const periodsVal=document.getElementById('f-periods').value;
+    const periods=periodsVal==='custom'?Number(document.getElementById('f-custom-periods').value)||1:Number(periodsVal)||1;
+    const payments=[];
     for(let i=1;i<=periods;i++){
-      const dd = document.getElementById(`fp-date-${i}`)?.value||'';
-      const pa = Number(document.getElementById(`fp-amt-${i}`)?.value)||Math.round(total/periods);
-      payments.push({period:i, dueDate:dd, amount:pa, paidDate:'', status:'未入款'});
+      const dd=document.getElementById(`fp-date-${i}`)?.value||'';
+      const pa=Number(document.getElementById(`fp-amt-${i}`)?.value)||Math.round(total/periods);
+      payments.push({period:i,dueDate:dd,amount:pa,paidDate:'',status:'未入款'});
     }
-    DB.receivables.push({
-      id:nextId(DB.receivables,'RA'),
-      contractNo:document.getElementById('f-cno').value,
-      clientId:cid,
-      signDate:document.getElementById('f-sign').value,
-      amount:amt, tax, total, note:document.getElementById('f-note').value,
-      payments
-    });
+    DB.receivables.push({id:nextId(DB.receivables,'RA'),contractNo:document.getElementById('f-cno').value,clientId:cid,signDate:document.getElementById('f-sign').value,amount:amt,tax,total,note:document.getElementById('f-note').value,payments});
     closeModal(); renderReceivable();
   });
   setTimeout(()=>{renderPaymentFields();},50);
@@ -1656,10 +1789,14 @@ function calcTax(){
   if(document.getElementById('f-total'))document.getElementById('f-total').value='$'+(amt+tax).toLocaleString();
 }
 function renderPaymentFields(){
-  const n=Number(document.getElementById('f-periods')?.value)||1;
+  const periodsVal=document.getElementById('f-periods')?.value;
+  const customWrap=document.getElementById('custom-period-wrap');
+  if(customWrap)customWrap.style.display=periodsVal==='custom'?'block':'none';
+  const n=periodsVal==='custom'?Number(document.getElementById('f-custom-periods')?.value)||0:Number(periodsVal)||1;
   const el=document.getElementById('payment-fields');
   if(!el)return;
-  el.innerHTML=`<div style="font-size:11px;color:var(--text3);margin-bottom:6px">各期應收日期與金額</div>`+
+  if(!n){ el.innerHTML=''; return; }
+  el.innerHTML=`<div style="font-size:11px;color:var(--text3);margin-bottom:6px">各期應收日期與金額（共 ${n} 期）</div>`+
     Array.from({length:n},(_,i)=>`<div class="form-row" style="margin-bottom:6px">
       <div class="form-group"><label class="form-label">第 ${i+1} 期 — 應收日</label><input class="form-input" type="date" id="fp-date-${i+1}"></div>
       <div class="form-group"><label class="form-label">金額</label><input class="form-input" type="number" id="fp-amt-${i+1}" placeholder="0"></div>
@@ -1721,16 +1858,31 @@ function renderSettings(){
   if(_settingsTab==='vendor') renderVendorSettings();
   else renderFreelancerSettings();
 }
+// Track which vendor is in edit mode
+const _vendorEditMode = new Set();
+
+function toggleVendorEdit(vid){
+  if(_vendorEditMode.has(vid)) _vendorEditMode.delete(vid);
+  else _vendorEditMode.add(vid);
+  renderVendorSettings();
+}
+
 function renderVendorSettings(){
   if(!DB.vendors.length){ document.getElementById('settings-content').innerHTML=`<div style="text-align:center;padding:60px;color:var(--text3)">尚無廠商資料，點右上角「新增廠商」</div>`; return; }
-  document.getElementById('settings-content').innerHTML=`<div class="vendor-grid">${DB.vendors.map(v=>`
-    <div class="vendor-card">
+  document.getElementById('settings-content').innerHTML=`<div class="vendor-grid">${DB.vendors.map(v=>{
+    const editing = _vendorEditMode.has(v.id);
+    return `
+    <div class="vendor-card" style="${editing?'border-color:var(--blue);box-shadow:0 0 0 2px var(--blue-bg)':''}">
       <div class="vendor-card-head">
         <div><div style="font-size:14px;font-weight:600">${v.name}</div><div style="font-size:11px;color:var(--text3);margin-top:1px">${v.type}${v.contact?' · '+v.contact:''}</div></div>
-        <div style="display:flex;gap:6px">
-          <button class="btn btn-sm" onclick="openAddVendorPlatform('${v.id}')">＋ 平台</button>
-          <button class="btn btn-sm" onclick="openEditVendor('${v.id}')">編輯</button>
-          <button class="btn btn-sm" style="color:var(--red-text)" onclick="deleteVendor('${v.id}')">刪除</button>
+        <div style="display:flex;gap:6px;align-items:center">
+          ${editing?`
+            <button class="btn btn-sm" onclick="openAddVendorPlatform('${v.id}')">＋ 平台</button>
+            <button class="btn btn-sm" style="color:var(--red-text)" onclick="deleteVendor('${v.id}')">刪除廠商</button>
+          `:''}
+          <button class="btn btn-sm ${editing?'btn-primary':''}" onclick="toggleVendorEdit('${v.id}')" style="${editing?'':''}">
+            ${editing?'完成':'編輯'}
+          </button>
         </div>
       </div>
       <div class="vendor-card-body">
@@ -1738,48 +1890,71 @@ function renderVendorSettings(){
           <div class="platform-section">
             <div class="platform-label" style="display:flex;justify-content:space-between;align-items:center">
               <span>${pl.platform}</span>
-              <div style="display:flex;gap:4px">
+              ${editing?`<div style="display:flex;gap:4px">
                 <span class="edit-hint" onclick="openAddVendorItem('${v.id}',${pi})">＋ 項目</span>
                 <span class="edit-hint" style="color:var(--red-text);border-color:var(--red-bg)" onclick="deleteVendorPlatform('${v.id}',${pi})">刪除平台</span>
-              </div>
+              </div>`:''}
             </div>
             ${pl.items.map((item,ii)=>`
               <div class="rate-row">
                 <span class="rate-item-name">${item.name}</span>
                 <span class="rate-price" style="color:var(--amber-text)">$${item.price}</span>
-                <div class="rate-actions">
+                ${editing?`<div class="rate-actions" style="opacity:1">
                   <button class="btn btn-sm" onclick="openEditVendorItem('${v.id}',${pi},${ii})">編輯</button>
                   <button class="btn btn-sm" style="color:var(--red-text)" onclick="deleteVendorItem('${v.id}',${pi},${ii})">✕</button>
-                </div>
+                </div>`:`<div class="rate-actions">
+                  <button class="btn btn-sm" onclick="openEditVendorItem('${v.id}',${pi},${ii})">編輯</button>
+                  <button class="btn btn-sm" style="color:var(--red-text)" onclick="deleteVendorItem('${v.id}',${pi},${ii})">✕</button>
+                </div>`}
               </div>`).join('')}
           </div>`).join('')}
       </div>
-    </div>`).join('')}</div>`;
+    </div>`;
+  }).join('')}</div>`;
 }
+const _freelancerEditMode = new Set();
+
+function toggleFreelancerEdit(fid){
+  if(_freelancerEditMode.has(fid)) _freelancerEditMode.delete(fid);
+  else _freelancerEditMode.add(fid);
+  renderFreelancerSettings();
+}
+
 function renderFreelancerSettings(){
   if(!DB.freelancers.length){ document.getElementById('settings-content').innerHTML=`<div style="text-align:center;padding:60px;color:var(--text3)">尚無外包人員，點右上角「新增外包人員」</div>`; return; }
-  document.getElementById('settings-content').innerHTML=`<div class="vendor-grid">${DB.freelancers.map(f=>`
-    <div class="vendor-card">
+  document.getElementById('settings-content').innerHTML=`<div class="vendor-grid">${DB.freelancers.map(f=>{
+    const editing = _freelancerEditMode.has(f.id);
+    return `
+    <div class="vendor-card" style="${editing?'border-color:var(--blue);box-shadow:0 0 0 2px var(--blue-bg)':''}">
       <div class="vendor-card-head">
         <div><div style="font-size:14px;font-weight:600">${f.name}</div><div style="font-size:11px;color:var(--text3);margin-top:1px">${f.type} · ${Object.keys(f.rates).length} 項報價</div></div>
-        <div style="display:flex;gap:6px">
-          <button class="btn btn-sm" onclick="openAddFreelancerItem('${f.id}')">＋ 項目</button>
-          <button class="btn btn-sm" onclick="openEditFreelancer('${f.id}')">編輯</button>
-          <button class="btn btn-sm" style="color:var(--red-text)" onclick="deleteFreelancer('${f.id}')">刪除</button>
+        <div style="display:flex;gap:6px;align-items:center">
+          ${editing?`
+            <button class="btn btn-sm" onclick="openAddFreelancerItem('${f.id}')">＋ 項目</button>
+            <button class="btn btn-sm" onclick="openEditFreelancer('${f.id}')">資料</button>
+            <button class="btn btn-sm" style="color:var(--red-text)" onclick="deleteFreelancer('${f.id}')">刪除</button>
+          `:''}
+          <button class="btn btn-sm ${editing?'btn-primary':''}" onclick="toggleFreelancerEdit('${f.id}')">
+            ${editing?'完成':'編輯'}
+          </button>
         </div>
       </div>
       <div class="vendor-card-body" style="padding:8px 4px">
-        ${Object.entries(f.rates).map(([name,price],idx)=>`
+        ${Object.entries(f.rates).map(([name,price])=>`
           <div class="rate-row">
             <span class="rate-item-name">${name}</span>
             <span class="rate-price" style="color:var(--teal-text)">${price?'$'+price:'—'}</span>
-            <div class="rate-actions">
+            ${editing?`<div class="rate-actions" style="opacity:1">
               <button class="btn btn-sm" onclick="openEditFreelancerItem('${f.id}',${JSON.stringify(name)},${price})">編輯</button>
               <button class="btn btn-sm" style="color:var(--red-text)" onclick="deleteFreelancerItem('${f.id}',${JSON.stringify(name)})">✕</button>
-            </div>
+            </div>`:`<div class="rate-actions">
+              <button class="btn btn-sm" onclick="openEditFreelancerItem('${f.id}',${JSON.stringify(name)},${price})">編輯</button>
+              <button class="btn btn-sm" style="color:var(--red-text)" onclick="deleteFreelancerItem('${f.id}',${JSON.stringify(name)})">✕</button>
+            </div>`}
           </div>`).join('')}
       </div>
-    </div>`).join('')}</div>`;
+    </div>`;
+  }).join('')}</div>`;
 }
 function openAddVendor(){
   openModal('新增廠商',`
@@ -1869,7 +2044,260 @@ function openEditFreelancerItem(fid,itemName,currentPrice){
 }
 function deleteFreelancerItem(fid,itemName){ delete DB.freelancers.find(x=>x.id===fid).rates[itemName]; renderSettings(); }
 
-// ─── INIT ────────────────────────────────────────────────────────
+// ─── CLIENT & SPEC FORMS ─────────────────────────────────────────
+function openAddClient(){
+  openModal('新增客戶',`
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">客戶名稱 *</label><input class="form-input" id="f-name" placeholder="公司名稱"></div>
+      <div class="form-group"><label class="form-label">統一編號</label><input class="form-input" id="f-ubn" placeholder="00000000"></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">合約起日 *</label><input class="form-input" type="date" id="f-start"></div>
+      <div class="form-group"><label class="form-label">合約迄日 *</label><input class="form-input" type="date" id="f-end"></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">聯絡人</label><input class="form-input" id="f-contact" placeholder="姓名"></div>
+      <div class="form-group"><label class="form-label">執行PM</label><input class="form-input" id="f-pm" placeholder="PM姓名"></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">付款方式</label>
+        <input class="form-input" id="f-pay" list="pay-list" placeholder="月付 / 季付 / 半年付 / 年付 / 其他">
+        <datalist id="pay-list"><option>月付</option><option>季付</option><option>半年付</option><option>年付</option><option>其他</option></datalist>
+      </div>
+      <div class="form-group"><label class="form-label">合約總金額</label><input class="form-input" type="number" id="f-total" placeholder="0"></div>
+    </div>
+    <div class="form-group"><label class="form-label">備註</label><textarea class="form-input" id="f-note" rows="2" placeholder="填寫備註..."></textarea></div>
+  `,()=>{
+    const name=document.getElementById('f-name').value.trim();
+    const start=document.getElementById('f-start').value;
+    const end=document.getElementById('f-end').value;
+    if(!name||!start||!end)return alert('請填寫客戶名稱、合約起日與迄日');
+    DB.clients.push({id:nextId(DB.clients,'C'),name,ubn:document.getElementById('f-ubn').value,contact:document.getElementById('f-contact').value,pm:document.getElementById('f-pm').value,contractStart:start,contractEnd:end,payMethod:document.getElementById('f-pay').value,totalContract:Number(document.getElementById('f-total').value)||0,note:document.getElementById('f-note').value});
+    closeModal(); renderClients();
+    // reset multiselects so new client appears
+    _msInited={rt:false,rv:false,rs:false,rf:false}; _msRaInited=false;
+  });
+}
+
+function openEditClient(clientId){
+  const c=DB.clients.find(x=>x.id===clientId); if(!c)return;
+  openModal('編輯客戶：'+c.name,`
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">客戶名稱 *</label><input class="form-input" id="f-name" value="${c.name}"></div>
+      <div class="form-group"><label class="form-label">統一編號</label><input class="form-input" id="f-ubn" value="${c.ubn}"></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">合約起日</label><input class="form-input" type="date" id="f-start" value="${c.contractStart}"></div>
+      <div class="form-group"><label class="form-label">合約迄日</label><input class="form-input" type="date" id="f-end" value="${c.contractEnd}"></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">聯絡人</label><input class="form-input" id="f-contact" value="${c.contact}"></div>
+      <div class="form-group"><label class="form-label">執行PM</label><input class="form-input" id="f-pm" value="${c.pm}"></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">付款方式</label>
+        <input class="form-input" id="f-pay" list="pay-list2" value="${c.payMethod}">
+        <datalist id="pay-list2"><option>月付</option><option>季付</option><option>半年付</option><option>年付</option><option>其他</option></datalist>
+      </div>
+      <div class="form-group"><label class="form-label">合約總金額</label><input class="form-input" type="number" id="f-total" value="${c.totalContract}"></div>
+    </div>
+    <div class="form-group"><label class="form-label">備註</label><textarea class="form-input" id="f-note" rows="2">${c.note}</textarea></div>
+  `,()=>{
+    c.name=document.getElementById('f-name').value.trim()||c.name;
+    c.ubn=document.getElementById('f-ubn').value;
+    c.contractStart=document.getElementById('f-start').value;
+    c.contractEnd=document.getElementById('f-end').value;
+    c.contact=document.getElementById('f-contact').value;
+    c.pm=document.getElementById('f-pm').value;
+    c.payMethod=document.getElementById('f-pay').value;
+    c.totalContract=Number(document.getElementById('f-total').value)||0;
+    c.note=document.getElementById('f-note').value;
+    closeModal(); renderClients();
+    if(document.getElementById('client-drawer').classList.contains('open'))renderDrawerBody(clientId);
+  });
+}
+
+function openAddSpec(clientId){
+  const c=DB.clients.find(x=>x.id===clientId);
+  openModal('新增規格項目 — '+c.name,`
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">規格類型 *</label>
+        <input class="form-input" id="f-type" list="type-list" placeholder="口碑 / 社群 / 廣告 / 其他">
+        <datalist id="type-list"><option>口碑</option><option>社群</option><option>廣告</option><option>其他</option></datalist>
+      </div>
+      <div class="form-group"><label class="form-label">項目名稱 *</label><input class="form-input" id="f-name" placeholder="如：即時回文、FB貼文"></div>
+    </div>
+    <div class="form-group"><label class="form-label">規格說明</label><input class="form-input" id="f-spec" placeholder="如：300字+5回文、每月10篇"></div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">數量 *</label><input class="form-input" type="number" id="f-qty" placeholder="0"></div>
+      <div class="form-group"><label class="form-label">單位</label>
+        <input class="form-input" id="f-unit" list="unit-list" placeholder="則 / 篇 / 月 / 年 / 次">
+        <datalist id="unit-list"><option>則</option><option>篇</option><option>月</option><option>年</option><option>人</option><option>次</option><option>支</option></datalist>
+      </div>
+      <div class="form-group"><label class="form-label">單價（售）</label><input class="form-input" type="number" id="f-price" placeholder="0"></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">執行成本（單）</label><input class="form-input" type="number" id="f-cost" placeholder="0"></div>
+      <div class="form-group"><label class="form-label" style="color:var(--text3)">系統自動計算總價 / 毛利率</label></div>
+    </div>
+  `,()=>{
+    const name=document.getElementById('f-name').value.trim();
+    const type=document.getElementById('f-type').value.trim();
+    if(!name||!type)return alert('請填寫規格類型與項目名稱');
+    const qty=Number(document.getElementById('f-qty').value)||0;
+    const price=Number(document.getElementById('f-price').value)||0;
+    const cost=Number(document.getElementById('f-cost').value)||0;
+    DB.specItems.push({id:nextId(DB.specItems,'S'),clientId,type,name,spec:document.getElementById('f-spec').value,qty,unit:document.getElementById('f-unit').value||'篇',price,cost,totalPrice:qty*price,totalCost:qty*cost});
+    closeModal(); renderDrawerBody(clientId);
+  });
+}
+
+// ─── VENDOR & FREELANCER RECORD FORMS ────────────────────────────
+function openAddVendorRecord(clientId){
+  const clientList = DB.clients.map(c=>`<option value="${c.id}">${c.name}</option>`).join('');
+  const specList = DB.specItems.filter(s=>!clientId||s.clientId===clientId).map(s=>`<option value="${s.id}">${s.type}・${s.name}</option>`).join('');
+  const vendorList = DB.vendors.map(v=>v.name).join(',');
+  openModal('新增廠商執行記錄',`
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">客戶 *</label>
+        <input class="form-input" id="f-client-name" list="cl-list" placeholder="輸入或選擇客戶" value="${clientId?DB.clients.find(x=>x.id===clientId)?.name||'':''}">
+        <datalist id="cl-list">${DB.clients.map(c=>`<option value="${c.name}">`).join('')}</datalist>
+      </div>
+      <div class="form-group"><label class="form-label">規格項目</label>
+        <input class="form-input" id="f-spec-name" list="sp-list" placeholder="輸入或選擇規格">
+        <datalist id="sp-list">${DB.specItems.filter(s=>!clientId||s.clientId===clientId).map(s=>`<option value="${s.name}">`).join('')}</datalist>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">廠商 *</label>
+        <input class="form-input" id="f-vendor-name" list="vd-list" placeholder="輸入或選擇廠商">
+        <datalist id="vd-list">${DB.vendors.map(v=>`<option value="${v.name}">`).join('')}</datalist>
+      </div>
+      <div class="form-group"><label class="form-label">月份</label><input class="form-input" type="month" id="f-month"></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">發布日期</label><input class="form-input" type="date" id="f-date"></div>
+      <div class="form-group"><label class="form-label">平台</label>
+        <input class="form-input" id="f-platform" list="pf-list" placeholder="Dcard / PTT / Threads...">
+        <datalist id="pf-list"><option>Dcard</option><option>PTT</option><option>Facebook</option><option>Threads</option><option>IG</option><option>Mobile01</option><option>Babyhome</option><option>媽咪拜</option><option>媽咪愛</option><option>Fashionguide</option><option>Youtube</option><option>巴哈姆特</option><option>Google</option><option>Google Map</option></datalist>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">板塊</label><input class="form-input" id="f-board" placeholder="如：醫美、保險、美妝"></div>
+      <div class="form-group"><label class="form-label">項目類型</label>
+        <input class="form-input" id="f-itype" list="it-list" placeholder="發文 / 回文 / 按讚...">
+        <datalist id="it-list"><option>發文</option><option>回文</option><option>按讚</option><option>開文</option><option>追蹤</option><option>轉發</option><option>發文+圖</option><option>回文+圖</option><option>五星評論</option></datalist>
+      </div>
+    </div>
+    <div class="form-group"><label class="form-label">文章標題</label><input class="form-input" id="f-title" placeholder="填寫文章標題或關鍵字"></div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">帳號</label><input class="form-input" id="f-account" placeholder="執行帳號"></div>
+      <div class="form-group"><label class="form-label">金額</label><input class="form-input" type="number" id="f-amount" placeholder="0"></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">上線連結</label><input class="form-input" id="f-link" placeholder="https://..."></div>
+      <div class="form-group"><label class="form-label">執行狀態</label>
+        <input class="form-input" id="f-done" list="done-list" value="已執行">
+        <datalist id="done-list"><option>已執行</option><option>未執行</option></datalist>
+      </div>
+    </div>
+  `,()=>{
+    const clientName=document.getElementById('f-client-name').value.trim();
+    const mo=document.getElementById('f-month').value;
+    if(!clientName)return alert('請填寫客戶名稱');
+    // find or match client id
+    const matchC = DB.clients.find(x=>x.name===clientName);
+    const cid = matchC?matchC.id:clientName;
+    const specName=document.getElementById('f-spec-name').value.trim();
+    const matchS = DB.specItems.find(x=>x.name===specName&&(x.clientId===cid||!matchC));
+    const sid = matchS?matchS.id:specName;
+    const vendorName=document.getElementById('f-vendor-name').value.trim();
+    const matchV = DB.vendors.find(x=>x.name===vendorName);
+    const vid = matchV?matchV.id:vendorName;
+    DB.vendorRecords.push({id:nextId(DB.vendorRecords,'VR'),specItemId:sid,clientId:cid,vendorId:vid,date:document.getElementById('f-date').value,platform:document.getElementById('f-platform').value,board:document.getElementById('f-board').value,itemType:document.getElementById('f-itype').value,title:document.getElementById('f-title').value,account:document.getElementById('f-account').value,link:document.getElementById('f-link').value,done:document.getElementById('f-done').value==='已執行',amount:Number(document.getElementById('f-amount').value)||0,month:mo});
+    closeModal();
+    if(document.getElementById('client-drawer').classList.contains('open')&&matchC)renderDrawerBody(cid);
+    else renderReportVendor();
+  });
+}
+
+function openAddFreelancerRecord(clientId){
+  openModal('新增外包執行記錄',`
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">客戶 *</label>
+        <input class="form-input" id="f-client-name" list="cl2-list" placeholder="輸入或選擇客戶" value="${clientId?DB.clients.find(x=>x.id===clientId)?.name||'':''}">
+        <datalist id="cl2-list">${DB.clients.map(c=>`<option value="${c.name}">`).join('')}</datalist>
+      </div>
+      <div class="form-group"><label class="form-label">規格項目</label>
+        <input class="form-input" id="f-spec-name" list="sp2-list" placeholder="輸入或選擇規格">
+        <datalist id="sp2-list">${DB.specItems.filter(s=>!clientId||s.clientId===clientId).map(s=>`<option value="${s.name}">`).join('')}</datalist>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">外包人員 *</label>
+        <input class="form-input" id="f-person-name" list="fp-list" placeholder="輸入或選擇人員" oninput="updateRateHintByName(this.value)">
+        <datalist id="fp-list">${DB.freelancers.map(f=>`<option value="${f.name}">`).join('')}</datalist>
+      </div>
+      <div class="form-group"><label class="form-label">月份</label><input class="form-input" type="month" id="f-month"></div>
+    </div>
+    <div id="rate-hint" style="font-size:11px;color:var(--teal);background:var(--teal-bg);padding:6px 10px;border-radius:6px;margin:-4px 0 8px;display:none"></div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">項目類型</label>
+        <input class="form-input" id="f-itype" list="fi2-list" placeholder="如：長圖文、即時回文-常規">
+        <datalist id="fi2-list"><option>長圖文</option><option>短圖文</option><option>短議題文</option><option>綁定回文</option><option>即時回文-常規</option><option>即時回文-特殊</option><option>即時回文-簡易</option><option>Google星評</option><option>KOC媒合</option><option>KOL媒合</option><option>報告整合</option><option>口碑上刊紀錄</option><option>每週監控</option><option>每月監控</option></datalist>
+      </div>
+      <div class="form-group"><label class="form-label">數量</label><input class="form-input" type="number" id="f-qty" placeholder="1" oninput="calcTotal()"></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">單價（依報價單）</label><input class="form-input" type="number" id="f-unitcost" placeholder="0" oninput="calcTotal()"></div>
+      <div class="form-group"><label class="form-label">小計</label><input class="form-input" id="f-total" placeholder="自動計算" readonly style="background:var(--bg)"></div>
+    </div>
+    <div class="form-group"><label class="form-label">狀態</label>
+      <input class="form-input" id="f-status" list="st-list" value="完成">
+      <datalist id="st-list"><option>完成</option><option>執行中</option><option>待確認</option></datalist>
+    </div>
+  `,()=>{
+    const clientName=document.getElementById('f-client-name').value.trim();
+    if(!clientName)return alert('請填寫客戶名稱');
+    const matchC=DB.clients.find(x=>x.name===clientName);
+    const cid=matchC?matchC.id:clientName;
+    const specName=document.getElementById('f-spec-name').value.trim();
+    const matchS=DB.specItems.find(x=>x.name===specName);
+    const sid=matchS?matchS.id:specName;
+    const personName=document.getElementById('f-person-name').value.trim();
+    const matchF=DB.freelancers.find(x=>x.name===personName);
+    const fid=matchF?matchF.id:personName;
+    const qty=Number(document.getElementById('f-qty').value)||1;
+    const uc=Number(document.getElementById('f-unitcost').value)||0;
+    DB.freelancerRecords.push({id:nextId(DB.freelancerRecords,'FR'),specItemId:sid,clientId:cid,freelancerId:fid,month:document.getElementById('f-month').value,itemType:document.getElementById('f-itype').value,qty,unitCost:uc,total:qty*uc,status:document.getElementById('f-status').value});
+    closeModal();
+    if(document.getElementById('client-drawer').classList.contains('open')&&matchC)renderDrawerBody(cid);
+    else renderReportFreelancer();
+  });
+}
+
+function calcTotal(){
+  const q=Number(document.getElementById('f-qty')?.value)||0;
+  const u=Number(document.getElementById('f-unitcost')?.value)||0;
+  const el=document.getElementById('f-total');
+  if(el)el.value=q&&u?'$'+(q*u).toLocaleString():'';
+}
+function updateRateHintByName(name){
+  const f=DB.freelancers.find(x=>x.name===name);
+  const el=document.getElementById('rate-hint');
+  if(!el)return;
+  if(f&&Object.keys(f.rates).length){
+    el.style.display='block';
+    el.textContent='報價參考：'+Object.entries(f.rates).map(([k,v])=>`${k} $${v}`).join('　');
+  } else { el.style.display='none'; }
+}
+function updateRateHint(fid){
+  const f=DB.freelancers.find(x=>x.id===fid);
+  const el=document.getElementById('rate-hint');
+  if(!el)return;
+  if(f&&Object.keys(f.rates).length){el.style.display='block';el.textContent='報價參考：'+Object.entries(f.rates).map(([k,v])=>`${k} $${v}`).join('　');}
+  else if(el){el.style.display='none';}
+}
 renderDashboard();
 </script>
 </body>
