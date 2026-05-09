@@ -196,6 +196,37 @@ select.form-input{cursor:pointer}
 ::-webkit-scrollbar-track{background:transparent}
 ::-webkit-scrollbar-thumb{background:var(--border2);border-radius:10px}
 
+/* Google Sheets sync */
+.gs-status-bar{display:flex;align-items:center;gap:8px;padding:7px 24px;font-size:12px;background:var(--surface);border-bottom:1px solid var(--border);flex-shrink:0}
+.gs-dot{width:7px;height:7px;border-radius:50%;background:var(--text3);flex-shrink:0}
+.gs-dot.synced{background:var(--green)}
+.gs-dot.syncing{background:var(--amber);animation:pulse .8s infinite}
+.gs-dot.error{background:var(--red)}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+.gs-label{color:var(--text3)}
+.gs-time{color:var(--text3);margin-left:2px}
+
+/* Paste import panel */
+.paste-panel{background:var(--surface);border:1px solid var(--border);border-radius:var(--r2);padding:16px;margin-bottom:16px;display:none}
+.paste-panel.open{display:block}
+.paste-panel-title{font-size:13px;font-weight:600;margin-bottom:10px;display:flex;align-items:center;gap:8px}
+.paste-textarea{width:100%;height:100px;border:1px solid var(--border2);border-radius:var(--r);padding:8px 10px;font-size:11px;font-family:monospace;background:var(--surface2);color:var(--text);resize:vertical;line-height:1.5;outline:none}
+.paste-textarea:focus{border-color:var(--blue)}
+.paste-hint-row{display:flex;align-items:center;gap:6px;margin-top:6px;font-size:11px;color:var(--text3)}
+kbd{display:inline-block;background:var(--surface2);border:1px solid var(--border2);border-radius:3px;padding:0 5px;font-size:10px;font-family:monospace}
+
+/* Preview table conflict highlight */
+tr.row-conflict td{background:rgba(217,119,6,.07)!important}
+tr.row-conflict td:first-child{border-left:3px solid var(--amber)}
+tr.row-ok td{background:rgba(22,163,74,.04)!important}
+td.cell-conflict{background:rgba(220,38,38,.1)!important;color:var(--red)!important;font-weight:500}
+
+/* Sync overlay */
+.sync-overlay{position:fixed;inset:0;background:rgba(0,0,0,.3);z-index:2000;display:flex;align-items:center;justify-content:center}
+.sync-box{background:var(--surface);border-radius:var(--r2);padding:28px 32px;min-width:240px;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.2)}
+.sync-spinner{width:32px;height:32px;border:3px solid var(--border2);border-top-color:var(--blue);border-radius:50%;animation:spin .7s linear infinite;margin:0 auto 12px}
+@keyframes spin{to{transform:rotate(360deg)}}
+
 /* Editable hint */
 .edit-hint{font-size:10px;color:var(--text3);padding:2px 6px;border-radius:4px;border:1px dashed var(--border2);cursor:pointer}
 .edit-hint:hover{border-color:var(--blue);color:var(--blue)}
@@ -468,9 +499,42 @@ select.form-input{cursor:pointer}
   <div id="page-report-vendor" class="page flex-page">
     <div class="topbar">
       <div><div class="topbar-title">廠商執行表</div><div class="topbar-sub">口碑發給帳號商的發案對帳表</div></div>
-      <button class="btn btn-primary" onclick="openAddVendorRecord()" style="margin-left:auto">
+      <button class="btn" onclick="togglePastePanel()" id="btn-paste-import" style="margin-left:auto">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 8h8M8 4v8"/></svg>批量貼上
+      </button>
+      <button class="btn" onclick="exportToSheets()">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 13h10M8 3v7M5 7l3 3 3-3"/></svg>匯出 Sheets
+      </button>
+      <button class="btn" onclick="syncFromSheets()">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 8a6 6 0 1110.7-3.7M14 2v4h-4"/></svg>從 Sheets 同步
+      </button>
+      <button class="btn btn-primary" onclick="openAddVendorRecord()">
         <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 2v12M2 8h12"/></svg>新增記錄
       </button>
+    </div>
+    <div class="gs-status-bar">
+      <div class="gs-dot" id="gs-dot"></div>
+      <span class="gs-label" id="gs-label">尚未同步到 Google Sheets</span>
+      <span class="gs-time" id="gs-time"></span>
+      <span style="flex:1"></span>
+      <span style="font-size:11px;color:var(--text3)">資料來源：樂法客戶管理系統</span>
+    </div>
+    <!-- 批量貼上面板 -->
+    <div class="paste-panel" id="paste-panel">
+      <div class="paste-panel-title">
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 8h8M8 4v8"/></svg>
+        批量貼上匯入（廠商執行記錄）
+        <button class="btn btn-sm" style="margin-left:auto" onclick="togglePastePanel()">關閉</button>
+      </div>
+      <div style="font-size:12px;color:var(--text3);margin-bottom:10px">
+        從 Excel 複製多行資料後貼入，欄位順序：<strong>專案名稱、期望執行日、平台、版位、標題、內容、項目類型、帳號、金額、連結、狀態（已執行/未執行）</strong>
+      </div>
+      <textarea class="paste-textarea" id="paste-textarea" placeholder="在 Excel 選取多列後 Ctrl+C，再點此處 Ctrl+V 貼上..."></textarea>
+      <div class="paste-hint-row">
+        <kbd>Ctrl</kbd>+<kbd>C</kbd> 複製 Excel 資料　→　點此處　→　<kbd>Ctrl</kbd>+<kbd>V</kbd> 貼上
+        <button class="btn btn-sm btn-primary" style="margin-left:auto" onclick="parsePasteData()">解析預覽</button>
+      </div>
+      <div id="paste-preview" style="margin-top:12px"></div>
     </div>
     <div class="report-filter-bar">
       <span class="filter-label">客戶</span>
@@ -2299,6 +2363,295 @@ function updateRateHint(fid){
   else if(el){el.style.display='none';}
 }
 renderDashboard();
+
+// ─── GOOGLE SHEETS INTEGRATION ──────────────────────────────────
+const GS_URL = 'https://script.google.com/macros/s/AKfycbwl1uktLsoACzsDfiALUqJpstncgq8i1ebwKvEkdqm6DjX8FZpQ-YTg7d5re7i1wzXFTQ/exec';
+const GS_SHEET = '廠商執行表';
+let gsLastSync = null;
+
+function gsSetStatus(state, msg, time){
+  const dot=document.getElementById('gs-dot');
+  const label=document.getElementById('gs-label');
+  const timeEl=document.getElementById('gs-time');
+  if(!dot)return;
+  dot.className='gs-dot'+(state?' '+state:'');
+  label.textContent=msg;
+  timeEl.textContent=time?'　'+time:'';
+}
+
+function showSyncOverlay(msg){
+  let el=document.getElementById('sync-overlay');
+  if(!el){
+    el=document.createElement('div');
+    el.id='sync-overlay';
+    el.className='sync-overlay';
+    el.innerHTML=`<div class="sync-box"><div class="sync-spinner"></div><div id="sync-msg" style="font-size:14px;color:var(--text2)"></div></div>`;
+    document.body.appendChild(el);
+  }
+  el.style.display='flex';
+  document.getElementById('sync-msg').textContent=msg||'處理中...';
+}
+function hideSyncOverlay(){ const el=document.getElementById('sync-overlay'); if(el)el.style.display='none'; }
+
+async function exportToSheets(){
+  gsSetStatus('syncing','匯出中...');
+  showSyncOverlay('正在匯出到 Google Sheets...');
+  try{
+    const headers=['記錄ID','月份','客戶','廠商','平台','版位','項目類型','文章標題','帳號','連結','金額','執行狀態','備註'];
+    const rows=[headers];
+    DB.vendorRecords.forEach(r=>{
+      const c=DB.clients.find(x=>x.id===r.clientId);
+      const v=DB.vendors.find(x=>x.id===r.vendorId);
+      rows.push([
+        r.id, r.month||'',
+        c?c.name:(r.clientId||''),
+        v?v.name:(r.vendorId||''),
+        r.platform||'', r.board||'',
+        r.itemType||'', r.title||'',
+        r.account||'', r.link||'',
+        r.amount||0,
+        r.done?'已執行':'未執行',
+        r.note||''
+      ]);
+    });
+    const res=await fetch(GS_URL,{method:'POST',body:JSON.stringify({action:'write',sheetName:GS_SHEET,rows})});
+    const data=await res.json();
+    hideSyncOverlay();
+    if(data.success){
+      gsLastSync=new Date();
+      gsSetStatus('synced','已同步到 Google Sheets',gsLastSync.toLocaleTimeString('zh-TW'));
+    } else {
+      gsSetStatus('error','匯出失敗：'+( data.error||'未知錯誤'));
+      alert('匯出失敗：'+(data.error||'請檢查 Apps Script 設定'));
+    }
+  }catch(e){
+    hideSyncOverlay();
+    gsSetStatus('error','匯出失敗：網路錯誤');
+    alert('匯出失敗：'+e.message);
+  }
+}
+
+async function syncFromSheets(){
+  if(!confirm('從 Google Sheets 同步回來會比對差異並標示衝突，確定要繼續？'))return;
+  gsSetStatus('syncing','同步中...');
+  showSyncOverlay('正在從 Google Sheets 讀取資料...');
+  try{
+    const res=await fetch(GS_URL,{method:'POST',body:JSON.stringify({action:'read',sheetName:GS_SHEET})});
+    const data=await res.json();
+    hideSyncOverlay();
+    if(!data.rows||data.rows.length<2){
+      gsSetStatus('error','Sheets 無資料');
+      alert('Google Sheets 上目前沒有資料，請先匯出一次再同步。');
+      return;
+    }
+    showSheetsConflictPanel(data.rows);
+  }catch(e){
+    hideSyncOverlay();
+    gsSetStatus('error','同步失敗：網路錯誤');
+    alert('同步失敗：'+e.message);
+  }
+}
+
+function showSheetsConflictPanel(rows){
+  const headers=rows[0];
+  const idIdx=headers.indexOf('記錄ID');
+  const amtIdx=headers.indexOf('金額');
+  const doneIdx=headers.indexOf('執行狀態');
+  const titleIdx=headers.indexOf('文章標題');
+  const conflicts=[];
+  const newRows=[];
+
+  rows.slice(1).forEach(row=>{
+    const rid=row[idIdx];
+    const existing=DB.vendorRecords.find(x=>x.id===rid);
+    if(!existing){ newRows.push(row); return; }
+    const sheetAmt=Number(row[amtIdx])||0;
+    const sheetDone=row[doneIdx]==='已執行';
+    const sheetTitle=row[titleIdx]||'';
+    const diffs=[];
+    if(existing.amount!==sheetAmt) diffs.push({field:'金額',sys:existing.amount,sheet:sheetAmt});
+    if(existing.done!==sheetDone) diffs.push({field:'執行狀態',sys:existing.done?'已執行':'未執行',sheet:row[doneIdx]});
+    if(existing.title!==sheetTitle) diffs.push({field:'文章標題',sys:existing.title,sheet:sheetTitle});
+    if(diffs.length) conflicts.push({rid,existing,row,diffs,headers});
+  });
+
+  if(!conflicts.length&&!newRows.length){
+    gsSetStatus('synced','Sheets 與系統資料一致',new Date().toLocaleTimeString('zh-TW'));
+    alert('✅ Google Sheets 與系統資料完全一致，無需更新。');
+    return;
+  }
+
+  // Build conflict UI
+  let html=`<div style="margin-bottom:12px;font-size:13px;color:var(--text2)">`;
+  if(conflicts.length) html+=`<span class="tag tag-amber" style="margin-right:6px">${conflicts.length} 筆差異</span>`;
+  if(newRows.length) html+=`<span class="tag tag-blue">${newRows.length} 筆新增</span>`;
+  html+=`</div>`;
+
+  if(conflicts.length){
+    html+=`<div class="table-wrap" style="margin-bottom:12px">
+      <div class="table-header"><div class="table-title">⚠️ 差異比對（橘色＝Sheets與系統不同）</div></div>
+      <table><thead><tr><th>記錄ID</th><th>欄位</th><th>系統現值</th><th>Sheets 新值</th><th>操作</th></tr></thead><tbody>
+      ${conflicts.map(({rid,diffs})=>diffs.map((d,di)=>`<tr class="${di===0?'row-conflict':''}">
+        ${di===0?`<td rowspan="${diffs.length}" style="vertical-align:middle;color:var(--text3)">${rid}</td>`:''}
+        <td style="font-weight:500">${d.field}</td>
+        <td>${d.sys}</td>
+        <td class="cell-conflict">${d.sheet}</td>
+        ${di===0?`<td rowspan="${diffs.length}" style="vertical-align:middle">
+          <button class="btn btn-sm" onclick="applySheetRow('${rid}',${JSON.stringify(conflicts.find(x=>x.rid===rid).row).replace(/"/g,'&quot;')},${JSON.stringify(conflicts.find(x=>x.rid===rid).headers).replace(/"/g,'&quot;')})">套用 Sheets</button>
+        </td>`:''}
+      </tr>`).join('')).join('')}
+      </tbody></table>
+    </div>`;
+  }
+
+  html+=`<div style="display:flex;gap:8px;justify-content:flex-end">
+    <button class="btn" onclick="document.getElementById('conflict-panel').remove()">取消</button>
+    ${conflicts.length?`<button class="btn btn-primary" onclick="applyAllSheetConflicts()">全部套用 Sheets 版本</button>`:''}
+    ${newRows.length?`<button class="btn btn-primary" onclick="importNewSheetRows()">匯入 ${newRows.length} 筆新增</button>`:''}
+  </div>`;
+
+  let panel=document.getElementById('conflict-panel');
+  if(!panel){
+    panel=document.createElement('div');
+    panel.id='conflict-panel';
+    panel.style.cssText='position:fixed;right:0;top:0;height:100vh;width:600px;background:var(--surface);border-left:1px solid var(--border);z-index:950;display:flex;flex-direction:column;overflow:hidden;box-shadow:-8px 0 30px rgba(0,0,0,.1)';
+    panel.innerHTML=`<div style="padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0">
+      <div style="font-size:15px;font-weight:600">Google Sheets 同步結果</div>
+      <button class="btn btn-sm" onclick="document.getElementById('conflict-panel').remove()">關閉</button>
+    </div><div id="conflict-body" style="flex:1;overflow-y:auto;padding:16px 20px"></div>`;
+    document.body.appendChild(panel);
+  }
+  document.getElementById('conflict-body').innerHTML=html;
+  panel._conflicts=conflicts;
+  panel._newRows=newRows;
+}
+
+function applySheetRow(rid, row, headers){
+  const r=DB.vendorRecords.find(x=>x.id===rid);
+  if(!r)return;
+  const get=(f)=>row[headers.indexOf(f)];
+  r.amount=Number(get('金額'))||0;
+  r.done=get('執行狀態')==='已執行';
+  r.title=get('文章標題')||r.title;
+  gsSetStatus('synced','已套用 Sheets 變更',new Date().toLocaleTimeString('zh-TW'));
+  renderReportVendor();
+  alert('✅ 已套用：'+rid);
+}
+
+function applyAllSheetConflicts(){
+  const panel=document.getElementById('conflict-panel');
+  if(!panel||!panel._conflicts)return;
+  panel._conflicts.forEach(({rid,row,headers})=>applySheetRow(rid,row,headers));
+  panel.remove();
+}
+
+function importNewSheetRows(){
+  const panel=document.getElementById('conflict-panel');
+  if(!panel||!panel._newRows)return;
+  const headers=panel._newRows[0]?null:null; // new rows already sliced
+  alert('新增功能：請先匯出再同步，確保欄位一致。目前 '+panel._newRows.length+' 筆新增需手動核對後新增。');
+  panel.remove();
+}
+
+// ─── PASTE IMPORT ────────────────────────────────────────────────
+function togglePastePanel(){
+  const p=document.getElementById('paste-panel');
+  if(!p)return;
+  p.classList.toggle('open');
+  if(p.classList.contains('open')) setTimeout(()=>document.getElementById('paste-textarea')?.focus(),100);
+}
+
+function parsePasteData(){
+  const raw=document.getElementById('paste-textarea')?.value||'';
+  if(!raw.trim()){alert('請先貼上資料');return;}
+  const lines=raw.trim().split('\n').filter(l=>l.trim());
+  const parsed=lines.map((line,i)=>{
+    const cols=line.split('\t');
+    const clientName=(cols[0]||'').trim();
+    const dateRaw=(cols[1]||'').trim();
+    const platform=(cols[2]||'').trim();
+    const board=(cols[3]||'').trim();
+    const title=(cols[4]||'').trim();
+    const content=(cols[5]||'').trim();
+    const itemType=(cols[6]||'').trim();
+    const account=(cols[7]||'').trim();
+    const amount=Number((cols[8]||'').replace(/[^\d.-]/g,''))||0;
+    const link=(cols[9]||'').trim();
+    const doneRaw=(cols[10]||'').trim();
+    const done=doneRaw===''||doneRaw==='1'||doneRaw==='已執行'||doneRaw==='true';
+
+    const matchClient=DB.clients.find(x=>x.name===clientName||clientName.includes(x.name)||x.name.includes(clientName));
+    const clientConflict=!matchClient&&clientName!=='';
+
+    // parse month from date
+    let month='';
+    if(dateRaw){
+      const d=new Date(dateRaw);
+      if(!isNaN(d)) month=d.toISOString().slice(0,7);
+    }
+
+    return{_line:i+1,clientName,matchClient,clientConflict,dateRaw,month,platform,board,title,content,itemType,account,amount,link,done,_valid:!clientConflict&&clientName!==''};
+  });
+
+  const ok=parsed.filter(r=>r._valid).length;
+  const warn=parsed.filter(r=>r.clientConflict).length;
+  const skip=parsed.filter(r=>!r.clientName).length;
+
+  let html=`<div style="display:flex;gap:8px;align-items:center;margin-bottom:10px">
+    <span class="tag tag-green">${ok} 筆正常</span>
+    ${warn?`<span class="tag tag-amber">${warn} 筆需確認客戶名稱</span>`:''}
+    ${skip?`<span class="tag tag-gray">${skip} 筆空白略過</span>`:''}
+  </div>
+  <div class="table-wrap"><table>
+    <thead><tr><th>#</th><th>客戶</th><th>月份</th><th>平台</th><th>項目</th><th style="text-align:right">金額</th><th>狀態</th></tr></thead>
+    <tbody>${parsed.filter(r=>r.clientName).map(r=>`
+      <tr class="${r.clientConflict?'row-conflict':'row-ok'}">
+        <td style="color:var(--text3)">${r._line}</td>
+        <td class="${r.clientConflict?'cell-conflict':''}">${r.clientName}${r.clientConflict?' ⚠':''}${r.matchClient?'':r.clientConflict?'（找不到客戶）':''}</td>
+        <td>${r.month||r.dateRaw||'—'}</td>
+        <td>${r.platform}${r.board?' / '+r.board:''}</td>
+        <td>${r.itemType||'—'}</td>
+        <td style="text-align:right">${r.amount>0?fmt(r.amount):'—'}</td>
+        <td><span class="tag ${r.done?'tag-green':'tag-gray'}">${r.done?'已執行':'未執行'}</span></td>
+      </tr>`).join('')}
+    </tbody>
+  </table></div>
+  <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:10px">
+    <button class="btn" onclick="document.getElementById('paste-textarea').value='';document.getElementById('paste-preview').innerHTML=''">清除</button>
+    <button class="btn btn-primary" onclick="confirmPasteImport()" ${ok===0?'disabled':''}>確認匯入 ${ok} 筆</button>
+  </div>`;
+
+  document.getElementById('paste-preview').innerHTML=html;
+  document.getElementById('paste-preview')._data=parsed;
+}
+
+function confirmPasteImport(){
+  const preview=document.getElementById('paste-preview');
+  const parsed=preview._data;
+  if(!parsed){return;}
+  const toImport=parsed.filter(r=>r._valid);
+  if(!toImport.length){alert('沒有可匯入的資料');return;}
+
+  toImport.forEach(r=>{
+    const cid=r.matchClient?r.matchClient.id:r.clientName;
+    DB.vendorRecords.push({
+      id:nextId(DB.vendorRecords,'VR'),
+      clientId:cid, vendorId:'',
+      specItemId:'', month:r.month,
+      platform:r.platform, board:r.board,
+      itemType:r.itemType, title:r.title,
+      account:r.account, link:r.link,
+      done:r.done, amount:r.amount,
+      note:''
+    });
+  });
+
+  document.getElementById('paste-textarea').value='';
+  preview.innerHTML=`<div class="tag tag-green" style="font-size:13px;padding:6px 12px">✅ 已成功匯入 ${toImport.length} 筆記錄</div>`;
+  togglePastePanel();
+  renderReportVendor();
+  gsSetStatus('','已新增 '+toImport.length+' 筆（尚未同步到 Sheets）');
+}
 </script>
 </body>
 </html>
