@@ -918,29 +918,25 @@ onAuthStateChanged(auth, async user => {
       window._currentUser.role === 'biz' ? '業務' :
       window._currentUser.role === 'plan' ? '企劃' :
       window._currentUser.role === 'finance' ? '財務' : '訪客';
-    // 載入資料
-    await window.loadAllData();
-    // 若 Firebase 沒有客戶資料，把預載資料寫進去（首次使用）
-    if(DB.clients.length===0){
-      // 不做任何事，保持空白讓使用者自行新增
-    } else if(DB.clients[0]?.id==='C001' && !DB.clients[0]?._synced){
-      // 預載資料還沒同步過，寫入 Firebase
-      const checkDoc = await getDoc(doc(db, 'clients', 'C001'));
-      if(!checkDoc.exists()){
-        const syncItems = [
-          {col:'clients', items: DB.clients},
-          {col:'contracts', items: DB.contracts},
-          {col:'specItems', items: DB.specItems},
-          {col:'receivables', items: DB.receivables},
-        ];
-        for(const {col, items} of syncItems){
-          for(const item of items){
-            await setDoc(doc(db, col, item.id), item);
-          }
+    // 先檢查 Firebase 有沒有資料
+    const checkClient = await getDoc(doc(db, 'clients', 'C001'));
+    if(!checkClient.exists()){
+      // Firebase 是空的，把預載資料寫進去
+      const seedData = [
+        {col:'clients', items: DB.clients},
+        {col:'contracts', items: DB.contracts},
+        {col:'specItems', items: DB.specItems},
+        {col:'receivables', items: DB.receivables},
+      ];
+      for(const {col, items} of seedData){
+        for(const item of items){
+          await setDoc(doc(db, col, item.id), item);
         }
-        toast('彩御初始資料已同步至雲端','success');
       }
+      toast('彩御初始資料已寫入','success');
     }
+    // 再載入（這次 Firebase 已有資料）
+    await window.loadAllData();
     window.renderHome();
   } else {
     window._currentUser = null;
