@@ -920,6 +920,27 @@ onAuthStateChanged(auth, async user => {
       window._currentUser.role === 'finance' ? '財務' : '訪客';
     // 載入資料
     await window.loadAllData();
+    // 若 Firebase 沒有客戶資料，把預載資料寫進去（首次使用）
+    if(DB.clients.length===0){
+      // 不做任何事，保持空白讓使用者自行新增
+    } else if(DB.clients[0]?.id==='C001' && !DB.clients[0]?._synced){
+      // 預載資料還沒同步過，寫入 Firebase
+      const checkDoc = await getDoc(doc(db, 'clients', 'C001'));
+      if(!checkDoc.exists()){
+        const syncItems = [
+          {col:'clients', items: DB.clients},
+          {col:'contracts', items: DB.contracts},
+          {col:'specItems', items: DB.specItems},
+          {col:'receivables', items: DB.receivables},
+        ];
+        for(const {col, items} of syncItems){
+          for(const item of items){
+            await setDoc(doc(db, col, item.id), item);
+          }
+        }
+        toast('彩御初始資料已同步至雲端','success');
+      }
+    }
     window.renderHome();
   } else {
     window._currentUser = null;
@@ -988,30 +1009,37 @@ window.deleteFromFS = async function(col, id) {
 // ═══ DATA ═══
 const DB = {
   clients:[
-    {id:'C001',name:'台灣菸酒股份有限公司（易洗樂）',ubn:'03787101',contact:'梁雅晴',contactPhone:'02-23214567#1435',pm:'陳睿緒',invoiceAddr:'台北市中正區南昌路一段4號',note:''}
+    {id:'C001',name:'彩御國際有限公司',ubn:'42866856',contact:'林穰瑀',contactPhone:'',contacts:[{name:'林穰瑀',phone:''}],pm:'',invoiceAddr:'台北市大安區羅斯福路二段33號四樓',status:'進行中',note:''}
   ],
   contracts:[
-    {id:'CT001',clientId:'C001',name:'2026口碑操作合約',start:'2026-05-01',end:'2026-08-31',total:148000,payMethod:'匯款',status:'進行中',signDate:'',contractNo:''}
+    {id:'CT001',clientId:'C001',name:'2026口碑操作合約',start:'2026-04-11',end:'2026-12-31',total:378000,payMethod:'匯款',status:'進行中',signDate:'',contractNo:'W60309M9',note:'每期$42,000，共9期，每月5日前開立發票，次月10日前付款'}
   ],
   specItems:[
-    {id:'S001',contractId:'CT001',clientId:'C001',category:'口碑',name:'長圖文',spec:'500~1000字內文案配圖3-5張',qty:3,unit:'篇',price:3600,extCost:0,intCost:0,costDetail:{},totalPrice:10800,totalCost:0},
-    {id:'S002',contractId:'CT001',clientId:'C001',category:'口碑',name:'短圖文',spec:'300~500字內文案配圖1-2張',qty:3,unit:'篇',price:2500,extCost:0,intCost:0,costDetail:{},totalPrice:7500,totalCost:0},
-    {id:'S003',contractId:'CT001',clientId:'C001',category:'口碑',name:'短議題文',spec:'300字內文案無配圖',qty:6,unit:'篇',price:1600,extCost:0,intCost:0,costDetail:{},totalPrice:9600,totalCost:0},
-    {id:'S004',contractId:'CT001',clientId:'C001',category:'口碑',name:'一般回文',spec:'30~100字內文案',qty:100,unit:'則',price:800,extCost:0,intCost:0,costDetail:{},totalPrice:80000,totalCost:0},
-    {id:'S005',contractId:'CT001',clientId:'C001',category:'口碑',name:'週監控',spec:'每週提供市場流量文章報表+分析建議',qty:4,unit:'月',price:12000,extCost:0,intCost:0,costDetail:{},totalPrice:48000,totalCost:0},
-    {id:'S006',contractId:'CT001',clientId:'C001',category:'口碑',name:'報告',spec:'初始分析報告&結案報告',qty:2,unit:'份',price:0,extCost:0,intCost:0,costDetail:{},totalPrice:0,totalCost:0},
+    {id:'S001',contractId:'CT001',clientId:'C001',category:'口碑',name:'長圖文',spec:'',qty:9,unit:'篇',price:3200,extCost:1400,intCost:0,costDetail:{},totalPrice:28800,totalCost:12600},
+    {id:'S002',contractId:'CT001',clientId:'C001',category:'口碑',name:'短議題文',spec:'',qty:9,unit:'篇',price:1600,extCost:800,intCost:0,costDetail:{},totalPrice:14400,totalCost:7200},
+    {id:'S003',contractId:'CT001',clientId:'C001',category:'口碑',name:'綁定回文',spec:'',qty:180,unit:'則',price:750,extCost:200,intCost:0,costDetail:{},totalPrice:135000,totalCost:36000},
+    {id:'S004',contractId:'CT001',clientId:'C001',category:'口碑',name:'口碑監控',spec:'',qty:36,unit:'組',price:2000,extCost:700,intCost:0,costDetail:{},totalPrice:72000,totalCost:25200},
+    {id:'S005',contractId:'CT001',clientId:'C001',category:'口碑',name:'即時回文',spec:'',qty:90,unit:'則',price:750,extCost:400,intCost:0,costDetail:{},totalPrice:67500,totalCost:36000},
+    {id:'S006',contractId:'CT001',clientId:'C001',category:'口碑',name:'即時回文（贈送）',spec:'',qty:15,unit:'則',price:0,extCost:120,intCost:0,costDetail:{},totalPrice:0,totalCost:1800},
+    {id:'S007',contractId:'CT001',clientId:'C001',category:'口碑',name:'Google星評',spec:'',qty:27,unit:'則',price:1600,extCost:800,intCost:0,costDetail:{},totalPrice:43200,totalCost:21600},
+    {id:'S008',contractId:'CT001',clientId:'C001',category:'口碑',name:'季報',spec:'',qty:3,unit:'份',price:0,extCost:100,intCost:0,costDetail:{},totalPrice:0,totalCost:300},
   ],
   receivables:[
-    {id:'RA001',contractId:'CT001',clientId:'C001',contractNo:'',signDate:'',amount:140952,tax:7048,total:148000,note:'專案走期2026/05～2026/08，1期全額',payments:[{period:1,dueDate:'',amount:148000,paidDate:'',status:'未入款'}]}
+    {id:'RA001',contractId:'CT001',clientId:'C001',contractNo:'W60309M9',signDate:'',amount:360000,tax:18000,total:378000,note:'共9期，每期$42,000',payments:[
+      {period:1,dueDate:'2026-05-10',amount:42000,paidDate:'',status:'未入款'},
+      {period:2,dueDate:'2026-06-10',amount:42000,paidDate:'',status:'未入款'},
+      {period:3,dueDate:'2026-07-10',amount:42000,paidDate:'',status:'未入款'},
+      {period:4,dueDate:'2026-08-10',amount:42000,paidDate:'',status:'未入款'},
+      {period:5,dueDate:'2026-09-10',amount:42000,paidDate:'',status:'未入款'},
+      {period:6,dueDate:'2026-10-10',amount:42000,paidDate:'',status:'未入款'},
+      {period:7,dueDate:'2026-11-10',amount:42000,paidDate:'',status:'未入款'},
+      {period:8,dueDate:'2026-12-10',amount:42000,paidDate:'',status:'未入款'},
+      {period:9,dueDate:'2027-01-10',amount:42000,paidDate:'',status:'未入款'},
+    ]}
   ],
   vendorRecords:[],
   freelancerRecords:[],
-  tasks:[
-    {id:'T001',title:'確認台灣菸酒口碑需求表',dept:'企劃',assignee:'',dueDate:'2026-05-20',status:'進行中',note:'',priority:'高'},
-    {id:'T002',title:'提供論壇版塊置入列表',dept:'企劃',assignee:'',dueDate:'2026-05-22',status:'未開始',note:'',priority:'中'},
-    {id:'T003',title:'台灣菸酒合約簽署追蹤',dept:'業務',assignee:'',dueDate:'2026-05-18',status:'進行中',note:'',priority:'高'},
-    {id:'T004',title:'應收帳款對帳',dept:'營運',assignee:'',dueDate:'2026-05-31',status:'未開始',note:'',priority:'低'},
-  ],
+  tasks:[],
   serviceCatalog:[
     {id:'SC001',category:'口碑',sub:'文案類型',name:'長圖文',spec:'500~1000字內文案配圖3-5張',unit:'篇',price:3600,note:'過稿'},
     {id:'SC002',category:'口碑',sub:'文案類型',name:'特規長圖文',spec:'500~1000字內文案配圖3-5張+原PO無限次回覆',unit:'篇',price:5000,note:'過稿'},
