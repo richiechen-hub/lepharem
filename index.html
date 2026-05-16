@@ -985,11 +985,15 @@ window.FS = {
 
 // ── 載入所有資料到 DB ──
 window.loadAllData = async function() {
+  // 先確保所有陣列都有初始值
+  const arrayKeys = ['clients','contracts','specItems','receivables','vendorRecords','freelancerRecords','tasks','freelancers','vendors','performance'];
+  arrayKeys.forEach(k => { if(!Array.isArray(DB[k])) DB[k] = []; });
+
   const collections = ['clients','contracts','specItems','receivables','vendorRecords','freelancerRecords','tasks','serviceCatalog','freelancers','vendors','performance'];
   for(const col of collections) {
     try {
       const result = await window.FS.getAll(col);
-      if(result.length > 0) DB[col] = result; // 只在有資料時覆蓋
+      if(result.length > 0) DB[col] = result; // 只在有資料時覆蓋，保留預載資料
     } catch(e) {
       console.warn('loadAllData skip:', col, e.message);
     }
