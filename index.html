@@ -604,9 +604,7 @@ tfoot td{background:var(--surface2);font-weight:600;color:var(--text)}
       <div class="topbar">
         <div class="topbar-left"><div class="topbar-title">業績管理</div><div class="topbar-sub">各客戶合約金額與收款狀況</div></div>
         <div class="topbar-actions">
-          <select class="filter-input" id="perf-status" onchange="renderPerformance()">
-            <option value="">全部狀態</option><option>進行中</option><option>已完成</option><option>暫停</option>
-          </select>
+          <span style="font-size:12px;color:var(--text3)">年度 / 月度業績追蹤</span>
         </div>
       </div>
       <div class="content" id="performance-content"></div>
@@ -966,6 +964,11 @@ window.loadAllData = async function() {
     const permDoc = await getDoc(doc(db, 'settings', 'permissions'));
     if(permDoc.exists()) DB.permissions = permDoc.data();
   } catch(e) {}
+  // perfTargets
+  try {
+    const ptDoc = await getDoc(doc(db, 'settings', 'perfTargets'));
+    if(ptDoc.exists()) DB.perfTargets = ptDoc.data();
+  } catch(e) {}
 };
 
 // ── 存回 Firestore 的 helpers（取代原本直接 push/splice） ──
@@ -1056,6 +1059,21 @@ let _idCounters={};
 function nextId(prefix){
   _idCounters[prefix]=(_idCounters[prefix]||0)+1;
   return prefix+String(_idCounters[prefix]).padStart(3,'0');
+}
+
+function genContractNo(startDate, endDate){
+  if(!startDate||!endDate) return '';
+  const s=new Date(startDate), e=new Date(endDate);
+  const yr=String(s.getFullYear()).slice(-1);
+  const mo=String(s.getMonth()+1).padStart(2,'0');
+  const months=Math.round((e-s)/(1000*60*60*24*30));
+  const code=months>=12?'Y':months>=6?'H':months>=3?'Q':'S';
+  const existing=DB.contracts.filter(c=>{
+    if(!c.contractNo)return false;
+    return c.contractNo.startsWith('W'+yr+mo+code);
+  });
+  const seq=String(existing.length+1).padStart(3,'0');
+  return 'W'+yr+mo+code+seq;
 }
 
 function toast(msg,type=''){
@@ -1399,10 +1417,15 @@ function openClientDrawer(clientId){
             <button class="btn btn-sm edit-only" onclick="openEditClient('${clientId}')">編輯</button>
           </div>
           <div class="card-body" style="display:flex;flex-direction:column;gap:10px">
-            ${[['聯絡人',c.contact],['聯絡電話',c.contactPhone],['執行PM',c.pm],['統一編號',c.ubn],['發票地址',c.invoiceAddr],['備註',c.note]].filter(r=>r[1]).map(([k,v])=>`
+            ${[['執行PM',c.pm],['統一編號',c.ubn],['發票地址',c.invoiceAddr],['狀態',c.status||'進行中'],['備註',c.note]].filter(r=>r[1]).map(([k,v])=>`
               <div class="flex justify-between gap-3">
                 <span style="font-size:12px;color:var(--text3);white-space:nowrap">${k}</span>
                 <span style="font-size:13px;font-weight:500;text-align:right">${v}</span>
+              </div>`).join('')}
+            ${(c.contacts||[{name:c.contact||'',phone:c.contactPhone||''}]).filter(x=>x.name).map((x,i)=>`
+              <div class="flex justify-between gap-3">
+                <span style="font-size:12px;color:var(--text3);white-space:nowrap">聯絡人${i>0?i+1:''}</span>
+                <span style="font-size:13px;font-weight:500;text-align:right">${x.name}${x.phone?' / '+x.phone:''}</span>
               </div>`).join('')}
           </div>
         </div>
@@ -1533,41 +1556,53 @@ function openAddClient(){
       <div class="form-group"><label class="form-label">統一編號</label><input class="form-input" id="f-ubn" placeholder="00000000"></div>
     </div>
     <div class="form-row">
-      <div class="form-group"><label class="form-label">聯絡人</label><input class="form-input" id="f-contact" placeholder="姓名"></div>
-      <div class="form-group"><label class="form-label">聯絡電話</label><input class="form-input" id="f-phone" placeholder="02-..."></div>
-    </div>
-    <div class="form-row">
       <div class="form-group"><label class="form-label">執行 PM</label><input class="form-input" id="f-pm" placeholder="PM 姓名"></div>
-      <div class="form-group"><label class="form-label">發票地址</label><input class="form-input" id="f-addr" placeholder="地址"></div>
+      <div class="form-group"><label class="form-label">狀態</label>
+        <select class="form-input" id="f-status"><option>進行中</option><option>結束合作</option></select>
+      </div>
+    </div>
+    <div class="form-group"><label class="form-label">發票地址</label><input class="form-input" id="f-addr" placeholder="地址"></div>
+    <div class="form-group"><label class="form-label">聯絡人（可多人，每行一位，格式：姓名 / 電話）</label>
+      <textarea class="form-input" id="f-contacts" placeholder="王小明 / 02-12345678&#10;李小華 / 0912-345678" rows="3"></textarea>
     </div>
     <div class="form-group"><label class="form-label">備註</label><textarea class="form-input" id="f-note" placeholder="補充說明..."></textarea></div>
-  `,()=>{
+  `,async ()=>{
     const name=document.getElementById('f-name').value.trim();
     if(!name)return alert('請填寫客戶名稱');
-    DB.clients.push({id:nextId('C'),name,ubn:document.getElementById('f-ubn').value,contact:document.getElementById('f-contact').value,contactPhone:document.getElementById('f-phone').value,pm:document.getElementById('f-pm').value,invoiceAddr:document.getElementById('f-addr').value,note:document.getElementById('f-note').value});
+    const contactsRaw=document.getElementById('f-contacts').value.trim();
+    const contacts=contactsRaw?contactsRaw.split('\n').map(l=>{const p=l.split('/');return{name:p[0]?.trim()||'',phone:p[1]?.trim()||''};}).filter(c=>c.name):[];
+    const client={id:nextId('C'),name,ubn:document.getElementById('f-ubn').value,contacts,contact:contacts[0]?.name||'',contactPhone:contacts[0]?.phone||'',pm:document.getElementById('f-pm').value,invoiceAddr:document.getElementById('f-addr').value,status:document.getElementById('f-status').value,note:document.getElementById('f-note').value};
+    DB.clients.push(client);
+    try{await window.saveToFS('clients',client);}catch(e){console.error(e);}
     closeModal();renderClients();toast('客戶已新增','success');
   });
 }
 
 function openEditClient(clientId){
   const c=DB.clients.find(x=>x.id===clientId);if(!c)return;
+  const contactsStr=(c.contacts||[{name:c.contact||'',phone:c.contactPhone||''}]).map(x=>x.name+(x.phone?' / '+x.phone:'')).join('\n');
   openModal('編輯客戶 — '+c.name,`
     <div class="form-row">
       <div class="form-group"><label class="form-label">客戶名稱 *</label><input class="form-input" id="f-name" value="${c.name}"></div>
       <div class="form-group"><label class="form-label">統一編號</label><input class="form-input" id="f-ubn" value="${c.ubn||''}"></div>
     </div>
     <div class="form-row">
-      <div class="form-group"><label class="form-label">聯絡人</label><input class="form-input" id="f-contact" value="${c.contact||''}"></div>
-      <div class="form-group"><label class="form-label">聯絡電話</label><input class="form-input" id="f-phone" value="${c.contactPhone||''}"></div>
-    </div>
-    <div class="form-row">
       <div class="form-group"><label class="form-label">執行 PM</label><input class="form-input" id="f-pm" value="${c.pm||''}"></div>
-      <div class="form-group"><label class="form-label">發票地址</label><input class="form-input" id="f-addr" value="${c.invoiceAddr||''}"></div>
+      <div class="form-group"><label class="form-label">狀態</label>
+        <select class="form-input" id="f-status"><option ${c.status==='進行中'?'selected':''}>進行中</option><option ${c.status==='結束合作'?'selected':''}>結束合作</option></select>
+      </div>
+    </div>
+    <div class="form-group"><label class="form-label">發票地址</label><input class="form-input" id="f-addr" value="${c.invoiceAddr||''}"></div>
+    <div class="form-group"><label class="form-label">聯絡人（每行一位，格式：姓名 / 電話）</label>
+      <textarea class="form-input" id="f-contacts" rows="3">${contactsStr}</textarea>
     </div>
     <div class="form-group"><label class="form-label">備註</label><textarea class="form-input" id="f-note">${c.note||''}</textarea></div>
-  `,()=>{
+  `,async ()=>{
     const name=document.getElementById('f-name').value.trim();if(!name)return alert('請填寫客戶名稱');
-    c.name=name;c.ubn=document.getElementById('f-ubn').value;c.contact=document.getElementById('f-contact').value;c.contactPhone=document.getElementById('f-phone').value;c.pm=document.getElementById('f-pm').value;c.invoiceAddr=document.getElementById('f-addr').value;c.note=document.getElementById('f-note').value;
+    const contactsRaw=document.getElementById('f-contacts').value.trim();
+    const contacts=contactsRaw?contactsRaw.split('\n').map(l=>{const p=l.split('/');return{name:p[0]?.trim()||'',phone:p[1]?.trim()||''};}).filter(c=>c.name):[];
+    c.name=name;c.ubn=document.getElementById('f-ubn').value;c.contacts=contacts;c.contact=contacts[0]?.name||'';c.contactPhone=contacts[0]?.phone||'';c.pm=document.getElementById('f-pm').value;c.invoiceAddr=document.getElementById('f-addr').value;c.status=document.getElementById('f-status').value;c.note=document.getElementById('f-note').value;
+    try{await window.saveToFS('clients',c);}catch(e){console.error(e);}
     closeModal();renderClients();openClientDrawer(clientId);toast('客戶資料已更新','success');
   });
 }
@@ -1577,28 +1612,38 @@ function openAddContract(clientId){
   openModal('新增合約 — '+c.name,`
     <div class="form-group"><label class="form-label">合約名稱 *</label><input class="form-input" id="f-cname" placeholder="如：2026口碑操作合約"></div>
     <div class="form-row">
-      <div class="form-group"><label class="form-label">合約起日</label><input class="form-input" type="date" id="f-start"></div>
-      <div class="form-group"><label class="form-label">合約迄日</label><input class="form-input" type="date" id="f-end"></div>
+      <div class="form-group"><label class="form-label">合約起日</label><input class="form-input" type="date" id="f-start" onchange="autoContractNo()"></div>
+      <div class="form-group"><label class="form-label">合約迄日</label><input class="form-input" type="date" id="f-end" onchange="autoContractNo()"></div>
     </div>
     <div class="form-row">
       <div class="form-group"><label class="form-label">合約總金額（含稅）</label><input class="form-input" type="number" id="f-total" placeholder="0"></div>
       <div class="form-group"><label class="form-label">付款方式</label>
-        <input class="form-input" id="f-pay" list="pay-list" placeholder="匯款 / 月付...">
-        <datalist id="pay-list"><option>匯款</option><option>月付</option><option>季付</option><option>年付</option></datalist>
+        <select class="form-input" id="f-pay">
+          <option>匯款</option><option>支票</option><option>現金</option><option>其他</option>
+        </select>
       </div>
     </div>
     <div class="form-row">
-      <div class="form-group"><label class="form-label">委編</label><input class="form-input" id="f-cno"></div>
+      <div class="form-group"><label class="form-label">合約編號（自動產生）</label><input class="form-input" id="f-cno" placeholder="填入起迄日後自動產生"></div>
       <div class="form-group"><label class="form-label">簽約日</label><input class="form-input" type="date" id="f-sign"></div>
     </div>
     <div class="form-group"><label class="form-label">狀態</label>
-      <select class="form-input" id="f-status"><option>進行中</option><option>已完成</option><option>暫停</option></select>
+      <select class="form-input" id="f-status"><option>進行中</option><option>完成</option><option>暫停</option><option>結束合約</option></select>
     </div>
-  `,()=>{
+    <div class="form-group"><label class="form-label">備註</label><textarea class="form-input" id="f-note" placeholder="補充說明..."></textarea></div>
+  `,async ()=>{
     const name=document.getElementById('f-cname').value.trim();if(!name)return alert('請填寫合約名稱');
-    DB.contracts.push({id:nextId('CT'),clientId,name,start:document.getElementById('f-start').value,end:document.getElementById('f-end').value,total:Number(document.getElementById('f-total').value)||0,payMethod:document.getElementById('f-pay').value,contractNo:document.getElementById('f-cno').value,signDate:document.getElementById('f-sign').value,status:document.getElementById('f-status').value});
+    const contract={id:nextId('CT'),clientId,name,start:document.getElementById('f-start').value,end:document.getElementById('f-end').value,total:Number(document.getElementById('f-total').value)||0,payMethod:document.getElementById('f-pay').value,contractNo:document.getElementById('f-cno').value,signDate:document.getElementById('f-sign').value,status:document.getElementById('f-status').value,note:document.getElementById('f-note').value};
+    DB.contracts.push(contract);
+    try{await window.saveToFS('contracts',contract);}catch(e){console.error(e);}
     closeModal();openClientDrawer(clientId);toast('合約已新增','success');
   });
+}
+function autoContractNo(){
+  const s=document.getElementById('f-start')?.value;
+  const e=document.getElementById('f-end')?.value;
+  const el=document.getElementById('f-cno');
+  if(s&&e&&el) el.value=genContractNo(s,e);
 }
 
 function openEditContract(contractId){
@@ -1611,15 +1656,28 @@ function openEditContract(contractId){
     </div>
     <div class="form-row">
       <div class="form-group"><label class="form-label">合約總金額（含稅）</label><input class="form-input" type="number" id="f-total" value="${ct.total||0}"></div>
-      <div class="form-group"><label class="form-label">付款方式</label><input class="form-input" id="f-pay" value="${ct.payMethod||''}"></div>
+      <div class="form-group"><label class="form-label">付款方式</label>
+        <select class="form-input" id="f-pay">${['匯款','支票','現金','其他'].map(s=>`<option ${s===ct.payMethod?'selected':''}>${s}</option>`).join('')}</select>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">合約編號</label><input class="form-input" id="f-cno" value="${ct.contractNo||''}"></div>
+      <div class="form-group"><label class="form-label">簽約日</label><input class="form-input" type="date" id="f-sign" value="${ct.signDate||''}"></div>
     </div>
     <div class="form-group"><label class="form-label">狀態</label>
-      <select class="form-input" id="f-status">${['進行中','已完成','暫停'].map(s=>`<option ${s===ct.status?'selected':''}>${s}</option>`).join('')}</select>
+      <select class="form-input" id="f-status">${['進行中','完成','暫停','結束合約'].map(s=>`<option ${s===ct.status?'selected':''}>${s}</option>`).join('')}</select>
     </div>
-  `,()=>{
+    <div class="form-group"><label class="form-label">備註</label><textarea class="form-input" id="f-note">${ct.note||''}</textarea></div>
+  `,async ()=>{
     ct.name=document.getElementById('f-cname').value.trim()||ct.name;
     ct.start=document.getElementById('f-start').value;ct.end=document.getElementById('f-end').value;
-    ct.total=Number(document.getElementById('f-total').value)||ct.total;ct.payMethod=document.getElementById('f-pay').value;ct.status=document.getElementById('f-status').value;
+    ct.total=Number(document.getElementById('f-total').value)||ct.total;
+    ct.payMethod=document.getElementById('f-pay').value;
+    ct.contractNo=document.getElementById('f-cno').value;
+    ct.signDate=document.getElementById('f-sign').value;
+    ct.status=document.getElementById('f-status').value;
+    ct.note=document.getElementById('f-note').value;
+    try{await window.saveToFS('contracts',ct);}catch(e){console.error(e);}
     closeModal();openClientDrawer(ct.clientId);toast('合約已更新','success');
   });
 }
@@ -2219,67 +2277,131 @@ function renderSummary(){
 }
 
 // ═══ PERFORMANCE ═══
+let _perfView='year'; // 'year' | 'month'
 function renderPerformance(){
   const el=document.getElementById('performance-content');if(!el)return;
-  const statusFilter=document.getElementById('perf-status')?.value||'';
-  const clients=DB.clients;
+  const now=new Date();
+  const curYear=now.getFullYear();
+  const curMonth=now.getMonth()+1;
+
+  // 讀取目標（存在 DB.perfTargets）
+  if(!DB.perfTargets) DB.perfTargets={};
+  const yearTarget=DB.perfTargets[curYear]||0;
+  const monthTarget=DB.perfTargets[curYear+'-'+String(curMonth).padStart(2,'0')]||0;
+
+  // 年度合約金額（以合約起日年份計算）
+  const yearContracts=DB.contracts.filter(c=>c.start?.startsWith(curYear+''));
+  const yearTotal=yearContracts.reduce((a,c)=>a+c.total,0);
+  const yearReceived=yearContracts.reduce((a,ct)=>{
+    return a+DB.receivables.filter(r=>r.contractId===ct.id).reduce((b,r)=>b+r.payments.filter(p=>p.status==='已入款').reduce((c2,p)=>c2+p.amount,0),0);
+  },0);
+
+  // 當月合約金額（以合約起日月份計算）
+  const ym=curYear+'-'+String(curMonth).padStart(2,'0');
+  const monthContracts=DB.contracts.filter(c=>c.start?.startsWith(ym));
+  const monthTotal=monthContracts.reduce((a,c)=>a+c.total,0);
+
+  // 年度進度
+  const yearPct=yearTarget>0?Math.min(yearTotal/yearTarget,1):0;
+  const yearGap=yearTarget>0?yearTarget-yearTotal:null;
+
   el.innerHTML=`
-    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:16px">
-      ${clients.map(c=>{
-        const contracts=DB.contracts.filter(x=>x.clientId===c.id&&(!statusFilter||x.status===statusFilter));
-        if(!contracts.length&&statusFilter)return'';
-        const totalAmt=contracts.reduce((a,x)=>a+x.total,0);
-        const received=DB.receivables.filter(x=>x.clientId===c.id).reduce((a,r)=>a+r.payments.filter(p=>p.status==='已入款').reduce((b,p)=>b+p.amount,0),0);
-        const specs=DB.specItems.filter(x=>x.clientId===c.id);
-        const revenue=specs.reduce((a,s)=>a+s.totalPrice,0);
-        const extCost=specs.reduce((a,s)=>a+s.qty*(s.extCost||0),0);
-        const profit=revenue-extCost-specs.reduce((a,s)=>a+s.qty*(s.intCost||0),0);
-        const margin=revenue>0?profit/revenue:null;
-        const pctV=totalAmt>0?received/totalAmt:0;
-        return`<div class="card">
-          <div class="card-header">
-            <div>
-              <div class="card-title">${c.name}</div>
-              <div style="font-size:11px;color:var(--text3);margin-top:2px">PM：${c.pm||'—'}</div>
-            </div>
-            <button class="btn btn-xs" onclick="openClientDrawer('${c.id}')">查看</button>
-          </div>
-          <div class="card-body" style="display:flex;flex-direction:column;gap:10px">
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
-              <div style="padding:8px;background:var(--surface2);border-radius:var(--r);text-align:center">
-                <div style="font-size:10px;color:var(--text3)">合約總金額</div>
-                <div style="font-size:15px;font-weight:600;margin-top:2px">${fmt(totalAmt)}</div>
-              </div>
-              <div style="padding:8px;background:var(--surface2);border-radius:var(--r);text-align:center">
-                <div style="font-size:10px;color:var(--text3)">已入款</div>
-                <div style="font-size:15px;font-weight:600;color:#16a34a;margin-top:2px">${fmt(received)}</div>
-              </div>
-            </div>
-            ${revenue?`<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
-              <div style="padding:8px;background:var(--surface2);border-radius:var(--r);text-align:center">
-                <div style="font-size:10px;color:var(--text3)">利潤</div>
-                <div style="font-size:15px;font-weight:600;color:${profit>=0?'#16a34a':'var(--red)'};margin-top:2px">${fmt(profit)}</div>
-              </div>
-              <div style="padding:8px;background:var(--surface2);border-radius:var(--r);text-align:center">
-                <div style="font-size:10px;color:var(--text3)">利潤率</div>
-                <div style="font-size:15px;font-weight:600;margin-top:2px">${margin!==null?pct(margin):'—'}</div>
-              </div>
-            </div>`:''}
-            ${totalAmt?`<div>
-              <div class="flex items-center gap-2" style="margin-bottom:4px">
-                <span style="font-size:11px;color:var(--text3)">收款進度</span>
-                <span style="font-size:11px;font-weight:500;margin-left:auto">${pct(pctV)}</span>
-              </div>
-              <div class="progress-wrap"><div class="progress-fill ${pctV>=1?'green':''}" style="width:${Math.round(pctV*100)}%"></div></div>
-            </div>`:''}
-            <div style="display:flex;flex-wrap:wrap;gap:4px">
-              ${contracts.map(ct=>`<span class="tag ${ct.status==='進行中'?'tag-green':ct.status==='已完成'?'tag-blue':'tag-gray'}" style="font-size:10px">${ct.name}</span>`).join('')||'<span style="font-size:12px;color:var(--text3)">無合約</span>'}
-            </div>
-          </div>
-        </div>`;
-      }).filter(Boolean).join('')||'<div class="empty-state"><p>尚無客戶資料</p></div>'}
+    <div style="padding:0 0 16px;display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+      <div style="display:flex;border:1px solid var(--border2);border-radius:var(--r);overflow:hidden">
+        <button onclick="_perfView='year';renderPerformance()" style="padding:6px 16px;font-size:12px;font-weight:500;font-family:var(--font);cursor:pointer;border:none;background:${_perfView==='year'?'var(--navy)':'var(--surface)'};color:${_perfView==='year'?'#fff':'var(--text2)'}">年度</button>
+        <button onclick="_perfView='month';renderPerformance()" style="padding:6px 16px;font-size:12px;font-weight:500;font-family:var(--font);cursor:pointer;border:none;border-left:1px solid var(--border2);background:${_perfView==='month'?'var(--navy)':'var(--surface)'};color:${_perfView==='month'?'#fff':'var(--text2)'}">當月</button>
+      </div>
+      <button onclick="openPerfTargetModal()" class="btn btn-sm">🎯 設定目標</button>
     </div>
+
+    ${_perfView==='year'?`
+    <div class="content-grid" style="margin-bottom:16px">
+      <div class="stat-card" style="border-top:3px solid var(--accent)">
+        <div class="stat-label">${curYear} 年度合約總金額</div>
+        <div class="stat-value">${fmt(yearTotal)}</div>
+        <div class="stat-change">${yearContracts.length} 份合約</div>
+      </div>
+      <div class="stat-card" style="border-top:3px solid #16a34a">
+        <div class="stat-label">年度已入款</div>
+        <div class="stat-value" style="color:#16a34a">${fmt(yearReceived)}</div>
+        <div class="stat-change">收款率 ${yearTotal?pct(yearReceived/yearTotal):'—'}</div>
+      </div>
+      <div class="stat-card" style="border-top:3px solid ${yearGap!==null&&yearGap<=0?'#16a34a':'var(--amber)'}">
+        <div class="stat-label">年度目標</div>
+        <div class="stat-value">${yearTarget?fmt(yearTarget):'未設定'}</div>
+        ${yearTarget?`<div class="stat-change ${yearGap<=0?'up':''}">距目標 ${yearGap>0?fmt(yearGap)+' 待達成':'已達成 🎉'}</div>`:'<div class="stat-change"><a href="#" onclick="openPerfTargetModal();return false" style="color:var(--accent)">點此設定目標</a></div>'}
+      </div>
+      <div class="stat-card" style="border-top:3px solid var(--purple)">
+        <div class="stat-label">目標達成率</div>
+        <div class="stat-value" style="color:var(--purple)">${yearTarget?pct(yearPct):'—'}</div>
+        ${yearTarget?`<div style="margin-top:8px"><div class="progress-wrap"><div class="progress-fill ${yearPct>=1?'green':yearPct>=.7?'':'amber'}" style="width:${Math.round(yearPct*100)}%"></div></div></div>`:''}
+      </div>
+    </div>
+    <div class="table-wrap"><div class="table-header"><div class="table-title">${curYear} 年度各客戶合約</div></div>
+    <table><thead><tr><th>客戶</th><th>合約名稱</th><th>合約編號</th><th style="text-align:right">金額</th><th style="text-align:right">已入款</th><th>狀態</th><th>付款方式</th></tr></thead>
+    <tbody>${yearContracts.length?yearContracts.map(ct=>{
+      const c=DB.clients.find(x=>x.id===ct.clientId);
+      const rec=DB.receivables.filter(r=>r.contractId===ct.id).reduce((a,r)=>a+r.payments.filter(p=>p.status==='已入款').reduce((b,p)=>b+p.amount,0),0);
+      const statusColor={'進行中':'tag-green','完成':'tag-blue','暫停':'tag-amber','結束合約':'tag-gray'};
+      return`<tr>
+        <td style="font-weight:500">${c?c.name:'—'}</td>
+        <td style="font-size:12px">${ct.name}</td>
+        <td style="font-size:11px;color:var(--text3);font-family:var(--font-mono)">${ct.contractNo||'—'}</td>
+        <td style="text-align:right;font-weight:500">${fmt(ct.total)}</td>
+        <td style="text-align:right;color:#16a34a">${fmt(rec)}</td>
+        <td><span class="tag ${statusColor[ct.status]||'tag-gray'}">${ct.status}</span></td>
+        <td style="font-size:12px">${ct.payMethod||'—'}</td>
+      </tr>`;}).join(''):'<tr><td colspan="7" style="text-align:center;color:var(--text3)">本年度尚無合約</td></tr>'}
+    </tbody></table></div>`:`
+    <div class="content-grid" style="margin-bottom:16px">
+      <div class="stat-card" style="border-top:3px solid var(--accent)">
+        <div class="stat-label">${curYear}/${String(curMonth).padStart(2,'0')} 當月合約金額</div>
+        <div class="stat-value">${fmt(monthTotal)}</div>
+        <div class="stat-change">${monthContracts.length} 份合約</div>
+      </div>
+      <div class="stat-card" style="border-top:3px solid var(--amber)">
+        <div class="stat-label">當月目標</div>
+        <div class="stat-value">${monthTarget?fmt(monthTarget):'未設定'}</div>
+        ${monthTarget?`<div class="stat-change ${monthTotal>=monthTarget?'up':''}">達成率 ${pct(monthTarget>0?monthTotal/monthTarget:0)}</div>`:'<div class="stat-change"><a href="#" onclick="openPerfTargetModal();return false" style="color:var(--accent)">點此設定目標</a></div>'}
+      </div>
+    </div>
+    <div class="table-wrap"><div class="table-header"><div class="table-title">本月合約</div></div>
+    <table><thead><tr><th>客戶</th><th>合約名稱</th><th>合約編號</th><th style="text-align:right">金額</th><th>狀態</th><th>付款方式</th></tr></thead>
+    <tbody>${monthContracts.length?monthContracts.map(ct=>{
+      const c=DB.clients.find(x=>x.id===ct.clientId);
+      const statusColor={'進行中':'tag-green','完成':'tag-blue','暫停':'tag-amber','結束合約':'tag-gray'};
+      return`<tr>
+        <td style="font-weight:500">${c?c.name:'—'}</td>
+        <td style="font-size:12px">${ct.name}</td>
+        <td style="font-size:11px;color:var(--text3);font-family:var(--font-mono)">${ct.contractNo||'—'}</td>
+        <td style="text-align:right;font-weight:500">${fmt(ct.total)}</td>
+        <td><span class="tag ${statusColor[ct.status]||'tag-gray'}">${ct.status}</span></td>
+        <td style="font-size:12px">${ct.payMethod||'—'}</td>
+      </tr>`;}).join(''):'<tr><td colspan="6" style="text-align:center;color:var(--text3)">本月尚無合約</td></tr>'}
+    </tbody></table></div>`}
   `;
+}
+
+function openPerfTargetModal(){
+  const now=new Date();
+  const yr=now.getFullYear();
+  const mo=String(now.getMonth()+1).padStart(2,'0');
+  if(!DB.perfTargets)DB.perfTargets={};
+  openModal('設定業績目標',`
+    <div class="form-group"><label class="form-label">${yr} 年度目標（元，含稅）</label>
+      <input class="form-input" type="number" id="f-ytarget" value="${DB.perfTargets[yr]||''}" placeholder="例：5000000">
+    </div>
+    <div class="form-group"><label class="form-label">${yr}/${mo} 當月目標（元，含稅）</label>
+      <input class="form-input" type="number" id="f-mtarget" value="${DB.perfTargets[yr+'-'+mo]||''}" placeholder="例：500000">
+    </div>
+  `,async ()=>{
+    const yt=Number(document.getElementById('f-ytarget').value)||0;
+    const mt=Number(document.getElementById('f-mtarget').value)||0;
+    if(yt)DB.perfTargets[yr]=yt;
+    if(mt)DB.perfTargets[yr+'-'+mo]=mt;
+    try{await window.FS.set('settings','perfTargets',DB.perfTargets);}catch(e){console.error(e);}
+    closeModal();renderPerformance();toast('目標已儲存','success');
+  });
 }
 
 // ═══ SCHEDULE ═══
