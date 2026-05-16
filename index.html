@@ -901,7 +901,7 @@ onAuthStateChanged(auth, async user => {
     const role = roleDoc.exists() ? roleDoc.data().role : 'viewer';
     window._currentUser = { uid: user.uid, name: user.displayName, email: user.email, role };
     // 若是第一次登入的 admin（Richie）自動設管理者
-    if(!roleDoc.exists() && user.email === 'richie@lepharem.com') {
+    if(!roleDoc.exists() && user.email === 'richie.chen@lepharem.com') {
       await setDoc(doc(db, 'users', user.uid), { name: user.displayName, email: user.email, role: 'admin' });
       window._currentUser.role = 'admin';
     } else if(!roleDoc.exists()) {
