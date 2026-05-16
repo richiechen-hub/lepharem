@@ -919,23 +919,40 @@ onAuthStateChanged(auth, async user => {
       window._currentUser.role === 'plan' ? '企劃' :
       window._currentUser.role === 'finance' ? '財務' : '訪客';
     // 先檢查 Firebase 有沒有資料
-    const checkClient = await getDoc(doc(db, 'clients', 'C001'));
-    if(!checkClient.exists()){
-      // Firebase 是空的，把預載資料寫進去
-      const seedData = [
-        {col:'clients', items: DB.clients},
-        {col:'contracts', items: DB.contracts},
-        {col:'specItems', items: DB.specItems},
-        {col:'receivables', items: DB.receivables},
-      ];
-      for(const {col, items} of seedData){
-        for(const item of items){
-          await setDoc(doc(db, col, item.id), item);
-        }
-      }
-      toast('彩御初始資料已寫入','success');
+    let needSeed = false;
+    try {
+      const checkClient = await getDoc(doc(db, 'clients', 'C001'));
+      needSeed = !checkClient.exists();
+    } catch(e) {
+      console.error('checkClient error:', e);
+      needSeed = true;
     }
-    // 再載入（這次 Firebase 已有資料）
+
+    if(needSeed){
+      try {
+        const _seedClients = DB.clients.slice();
+        const _seedContracts = DB.contracts.slice();
+        const _seedSpecs = DB.specItems.slice();
+        const _seedRAs = DB.receivables.slice();
+        const seedData = [
+          {col:'clients', items:_seedClients},
+          {col:'contracts', items:_seedContracts},
+          {col:'specItems', items:_seedSpecs},
+          {col:'receivables', items:_seedRAs},
+        ];
+        for(const {col, items} of seedData){
+          for(const item of items){
+            await setDoc(doc(db, col, item.id), item);
+          }
+        }
+        toast('彩御資料已寫入 Firebase','success');
+      } catch(e) {
+        console.error('seed error:', e);
+        toast('資料寫入失敗：'+e.message,'');
+      }
+    }
+
+    // 載入 Firebase 資料，若某 collection 為空則保留預載資料
     await window.loadAllData();
     window.renderHome();
   } else {
@@ -971,9 +988,10 @@ window.loadAllData = async function() {
   const collections = ['clients','contracts','specItems','receivables','vendorRecords','freelancerRecords','tasks','serviceCatalog','freelancers','vendors','performance'];
   for(const col of collections) {
     try {
-      DB[col] = await window.FS.getAll(col);
+      const result = await window.FS.getAll(col);
+      if(result.length > 0) DB[col] = result; // 只在有資料時覆蓋
     } catch(e) {
-      // 若 collection 不存在就保持原本的示範資料
+      console.warn('loadAllData skip:', col, e.message);
     }
   }
   // permissions 單獨讀取
