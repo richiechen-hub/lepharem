@@ -1035,7 +1035,7 @@ tfoot td{background:var(--surface2);font-weight:600;color:var(--text)}
 <!-- Firebase SDK -->
 <script type="module">
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
-import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged }
+import { getAuth, GoogleAuthProvider, signInWithRedirect, getRedirectResult, signOut, onAuthStateChanged }
   from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
 import { getFirestore, collection, getDocs, doc, setDoc, addDoc, updateDoc, deleteDoc, writeBatch }
   from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
@@ -1057,7 +1057,7 @@ const provider = new GoogleAuthProvider();
 // ── 登入/登出 ──
 window.loginWithGoogle = async function(){
   try {
-    await signInWithPopup(auth, provider);
+    await signInWithRedirect(auth, provider);
   } catch(e) {
     console.error('登入失敗', e);
     alert('登入失敗：' + e.message);
@@ -1153,6 +1153,13 @@ window.migrateLocalData = async function(){
     hideLoadingOverlay();
   }
 };
+
+// ── 處理 redirect 登入結果 ──
+getRedirectResult(auth).catch(e => {
+  if(e && e.code !== 'auth/cancelled-popup-request'){
+    console.error('Redirect 登入錯誤:', e);
+  }
+});
 
 // ── 監聽登入狀態 ──
 onAuthStateChanged(auth, async (user) => {
